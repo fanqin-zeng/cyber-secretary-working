@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -34,6 +35,16 @@ internal static class Program
         string folder = Path.Combine(Path.GetTempPath(), "CyberSecretaryUiTests-" + Guid.NewGuid().ToString("N"));
         try
         {
+            // Keep UI assertions independent of whether the real calendar for
+            // the runner's current year has been announced or bundled yet.
+            var calendars = Path.Combine(folder, "calendars");
+            Directory.CreateDirectory(calendars);
+            File.WriteAllText(Path.Combine(calendars, DateTime.Today.Year + ".json"), JsonSerializer.Serialize(new
+            {
+                year = DateTime.Today.Year,
+                papers = new[] { "test fixture, not an official calendar" },
+                days = new[] { new { date = DateTime.Today.ToString("yyyy-MM-dd"), name = "test", isOffDay = false } }
+            }));
             var dialog = new TaskDialog(null);
             dialog.Loaded += (_, _) => dialog.Dispatcher.BeginInvoke(() =>
             {

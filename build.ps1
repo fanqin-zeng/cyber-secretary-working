@@ -1,6 +1,7 @@
 ﻿param(
     [switch]$SkipTests,
-    [string]$OutputDirectory = 'release'
+    [string]$OutputDirectory = 'release',
+    [string]$Version
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,16 +11,21 @@ $repository = $PSScriptRoot
 $localSdk = Join-Path $env:LOCALAPPDATA 'CyberSecretary\dotnet-sdk\dotnet.exe'
 $dotnetCommand = Get-Command dotnet -ErrorAction SilentlyContinue
 $sdk = if (Test-Path -LiteralPath $localSdk) { $localSdk } elseif ($dotnetCommand) { $dotnetCommand.Source } else { throw '需要 .NET 10 SDK 才能从源码构建。成品 EXE 不需要 SDK 或运行时。' }
+$versionOptions = @()
+if ($Version) {
+    $resolved = & (Join-Path $repository 'scripts\resolve-release-version.ps1') -Tag ('v' + $Version)
+    $versionOptions = @('-p:Version=' + $resolved.Version)
+}
 
 Push-Location $repository
 try {
     if (-not $SkipTests) {
-        & $sdk run --project 'tests\CyberSecretary.Tests\CyberSecretary.Tests.csproj' -c Release
+        & $sdk run --project 'tests\CyberSecretary.Tests\CyberSecretary.Tests.csproj' -c Release @versionOptions
         if ($LASTEXITCODE -ne 0) { throw '规则与存储检查失败。' }
-        & $sdk run --project 'tests\CyberSecretary.UiTests\CyberSecretary.UiTests.csproj' -c Release
+        & $sdk run --project 'tests\CyberSecretary.UiTests\CyberSecretary.UiTests.csproj' -c Release @versionOptions
         if ($LASTEXITCODE -ne 0) { throw '界面集成检查失败。' }
     }
-    & $sdk publish 'src\CyberSecretary\CyberSecretary.csproj' -c Release -r win-x64 --self-contained true -o 'artifacts\publish'
+    & $sdk publish 'src\CyberSecretary\CyberSecretary.csproj' -c Release -r win-x64 --self-contained true -o 'artifacts\publish' @versionOptions
     if ($LASTEXITCODE -ne 0) { throw '发布失败。' }
     New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
     Copy-Item -LiteralPath 'artifacts\publish\CyberSecretary.exe' -Destination (Join-Path $OutputDirectory '计划栅格.exe') -Force

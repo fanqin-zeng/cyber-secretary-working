@@ -1,15 +1,17 @@
-﻿param([switch]$SkipTests)
+﻿param(
+    [switch]$SkipTests,
+    [string]$Tag
+)
 
 $ErrorActionPreference = 'Stop'
 $repository = $PSScriptRoot
-$version = ([xml](Get-Content -LiteralPath (Join-Path $repository 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
-# GitHub uses the requested v0.1 tag; assembly versions use 0.1.0.
-$tag = 'v' + (($version -split '\.')[0..1] -join '.')
+$releaseVersion = & (Join-Path $repository 'scripts\resolve-release-version.ps1') -Tag $Tag
+$tag = $releaseVersion.Tag
 $packageName = 'CyberSecretary-' + $tag + '-win-x64'
 $staging = Join-Path $repository ('artifacts\package\' + $packageName)
 $destination = Join-Path $repository ('release\' + $tag)
 
-& (Join-Path $repository 'build.ps1') -SkipTests:$SkipTests -OutputDirectory $staging
+& (Join-Path $repository 'build.ps1') -SkipTests:$SkipTests -OutputDirectory $staging -Version $releaseVersion.Version
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
 $exe = Join-Path $destination ($packageName + '.exe')
 $archive = Join-Path $destination ($packageName + '.zip')

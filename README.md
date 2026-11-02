@@ -110,7 +110,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 脚本依次执行规则与存储检查、WPF 界面集成检查，并发布自包含的单文件 EXE 至 `release/计划栅格.exe`。
 
-当前共 58 项检查：41 项规则与存储检查、17 项界面集成检查。测试使用独立临时目录，不写入个人任务。
+应用共有 58 项检查：41 项规则与存储检查、17 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
 
 ```powershell
 # 生成带版本号的 ZIP、EXE 和 SHA256 校验文件
@@ -130,6 +130,36 @@ docs/                    界面预览
 notices/                 随运行时分发的许可文本
 build.ps1                检查与构建
 package.ps1              版本化打包
+scripts/                 发布版本号解析
+.github/workflows/       Windows 构建与 Release 发布
+```
+
+## 自动发布 Release
+
+推送 `v` 开头的版本 tag 后，[GitHub Actions](https://github.com/fanqin-zeng/cyber-secretary-working/actions/workflows/release.yml) 会自动完成：
+
+1. 在 Windows runner 安装 .NET 10，检查版本 tag，并执行规则、存储与 WPF 界面检查。
+2. 根据 tag 写入程序版本，构建 Windows x64 自包含单文件 EXE，生成完整 ZIP 和 `SHA256SUMS.txt`。
+3. 校验附件及程序版本，再发布到同名 Release；Release 不存在时自动创建。
+
+```powershell
+# 将当前提交发布为 v0.2
+git tag -a v0.2 -m "Release v0.2"
+git push origin v0.2
+```
+
+tag 支持 `v0.2`、`v0.2.1`、`v1.0.0-rc.1`，分别对应程序版本 `0.2.0`、`0.2.1`、`1.0.0-rc.1`；附件名称完整保留 tag。带预发布后缀的版本会标记为 GitHub Pre-release。无需为了发布而先修改 `Directory.Build.props`。
+
+同名 Release 已存在时保留其标题和说明，并上传或替换同名附件。新 Release 先创建为草稿，附件上传成功后才正式发布。若执行失败，可在 Actions 中重跑。
+
+流程使用自动提供的 `GITHUB_TOKEN`，无需另配 PAT 或仓库 Secret。构建任务只有读取权限，发布任务才获得 `contents: write`。
+
+也可在 Actions 页面点击 **Run workflow**，手动验证构建；手动运行仅保留构建产物 14 天，不发布 Release。
+
+本地可指定相同 tag 打包：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\package.ps1 -Tag v0.2.1
 ```
 
 ## 开源协议

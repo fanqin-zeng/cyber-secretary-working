@@ -1,0 +1,113 @@
+name: Windows portable release
+run-name: Windows portable build - ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Windows x64 portable package
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate release version handling
+        run: ./tests/ReleaseVersion.Tests.ps1
+
+      - name: Resolve the version from the tag
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $tag = if ($env:REF_TYPE -eq 'tag') { $env:REF_NAME } else { '' }
+          $release = & ./scripts/resolve-release-version.ps1 -Tag $tag
+          "tag=$($release.Tag)" >> $env:GITHUB_OUTPUT
+          "version=$($release.Version)" >> $env:GITHUB_OUTPUT
+
+      - name: Run checks and build the self-contained EXE and ZIP
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: ./package.ps1 -Tag $env:RELEASE_TAG
+
+      - name: Verify package checksums and Windows version
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $directory = Join-Path 'release' $env:RELEASE_TAG
+          foreach ($line in Get-Content -LiteralPath (Join-Path $directory 'SHA256SUMS.txt')) {
+            $expected, $name = $line -split '  ', 2
+            $actual = (Get-FileHash -LiteralPath (Join-Path $directory $name) -Algorithm SHA256).Hash
+            if ($actual -ine $expected) { throw "Checksum mismatch: $name" }
+          }
+          $exe = Get-Item -LiteralPath (Join-Path $directory "CyberSecretary-$env:RELEASE_TAG-win-x64.exe")
+          $actualVersion = ($exe.VersionInfo.ProductVersion -split '\+')[0]
+          if ($actualVersion -cne $env:RELEASE_VERSION) { throw "Wrong EXE version: $actualVersion" }
+
+      - name: Save build artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: CyberSecretary-${{ steps.version.outputs.tag }}-win-x64
+          path: release/${{ steps.version.outputs.tag }}/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: Publish assets to the matching Release
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: CyberSecretary-*-win-x64
+          path: release
+          merge-multiple: true
+
+      - name: Create or update the corresponding Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum --check SHA256SUMS.txt
+          if ! gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            args=(--repo "$GH_REPO" --verify-tag --draft --generate-notes --title "$RELEASE_TAG · 计划栅格")
+            if [[ "$RELEASE_TAG" == *-* ]]; then args+=(--prerelease); fi
+            gh release create "$RELEASE_TAG" "${args[@]}"
+          fi
+          gh release upload "$RELEASE_TAG" --repo "$GH_REPO" --clobber \
+            "CyberSecretary-$RELEASE_TAG-win-x64.exe" \
+            "CyberSecretary-$RELEASE_TAG-win-x64.zip" SHA256SUMS.txt
+          gh release edit "$RELEASE_TAG" --repo "$GH_REPO" --draft=false
