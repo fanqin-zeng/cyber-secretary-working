@@ -28,7 +28,7 @@ try {
     & $sdk publish 'src\CyberSecretary\CyberSecretary.csproj' -c Release -r win-x64 --self-contained true -o 'artifacts\publish' @versionOptions
     if ($LASTEXITCODE -ne 0) { throw '发布失败。' }
     New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
-    Copy-Item -LiteralPath 'artifacts\publish\CyberSecretary.exe' -Destination (Join-Path $OutputDirectory '计划栅格.exe') -Force
+    Copy-Item -LiteralPath 'artifacts\publish\CyberSecretary.exe' -Destination (Join-Path $OutputDirectory 'CyberSecretray-Working.exe') -Force
     Copy-Item -LiteralPath '使用说明.txt' -Destination (Join-Path $OutputDirectory '使用说明.txt') -Force
     Copy-Item -LiteralPath 'README.md','LICENSE','THIRD_PARTY_NOTICES.md' -Destination $OutputDirectory -Force
     Copy-Item -LiteralPath 'src\CyberSecretary.Core\Calendars\LICENSE' -Destination (Join-Path $OutputDirectory '日历数据许可.txt') -Force
@@ -36,7 +36,7 @@ try {
     Copy-Item -LiteralPath 'notices\dotnet-runtime-LICENSE.txt','notices\dotnet-runtime-THIRD-PARTY-NOTICES.txt','notices\wpf-LICENSE.txt','notices\holiday-cn-LICENSE.txt' -Destination (Join-Path $OutputDirectory 'notices') -Force
     New-Item -ItemType Directory -Force -Path (Join-Path $OutputDirectory 'docs') | Out-Null
     Copy-Item -LiteralPath 'docs\screenshot.png' -Destination (Join-Path $OutputDirectory 'docs\screenshot.png') -Force
-    $output = Get-Item -LiteralPath (Join-Path $OutputDirectory '计划栅格.exe')
+    $output = Get-Item -LiteralPath (Join-Path $OutputDirectory 'CyberSecretray-Working.exe')
     Write-Output ('已生成：' + $output.FullName + '（' + [math]::Round($output.Length / 1MB, 1) + ' MB）')
 }
 finally { Pop-Location }

@@ -21,7 +21,7 @@ public partial class App : Application
         _mutex = new Mutex(true, "Local\\CyberSecretary-" + key, out _ownsMutex);
         if (!_ownsMutex)
         {
-            MessageBox.Show("计划栅格已在运行，请切换至已打开的窗口。", "计划栅格", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("CyberSecretray::Working已在运行，请切换至已打开的窗口。", "CyberSecretray::Working", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown(); return;
         }
         var store = new TaskStore(directory);
@@ -39,7 +39,7 @@ public partial class App : Application
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
-            MessageBox.Show("无法读取任务数据，原文件已保留。\n\n" + ex.Message + "\n\n数据位置：" + directory, "计划栅格", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show("无法读取任务数据，原文件已保留。\n\n" + ex.Message + "\n\n数据位置：" + directory, "CyberSecretray::Working", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }

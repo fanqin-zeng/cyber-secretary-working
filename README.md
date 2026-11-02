@@ -1,17 +1,17 @@
-# Cyber Secretary Working · 计划栅格
+# CyberSecretray::Working
 
 一个简约的个人计划管理工具。上方用时间与重要程度组成栅格，下方用表格管理任务。
 
 Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 .NET。
 
-[下载 v0.1](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.1) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
+[下载 v0.2](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.2) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
 
-![计划栅格界面，包含示例任务](docs/screenshot.png)
+![CyberSecretray::Working 界面，包含示例任务](docs/screenshot.png)
 
 ## 快速开始
 
-1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretary-v0.1-win-x64.zip`。
-2. 解压后双击 `计划栅格.exe`。也可下载单独的 `CyberSecretary-v0.1-win-x64.exe` 直接运行。
+1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.2-win-x64.zip`。
+2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.2-win-x64.exe` 直接运行。
 3. 点击表格右上角的「新建任务」，填写任务信息。
 
 支持 Windows 10 / Windows 11 x64。核心功能离线可用，不需要管理员权限。首次启动为空任务列表，截图中的任务仅用于演示。
@@ -34,12 +34,13 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 
 ### 时间栅格
 
-- 横轴：从今天起 0 至 30 个自然日，包含今天，共 31 列。
+- 横轴：从今天起，右端为「今天后 30 天」与「最远任务结束日期」中的较晚者，一次显示 31 列。
+- 鼠标在栅格上时，上下滚轮或横向滚轮均可横向浏览。点击栅格后也可使用左右方向键；Home 回到今天，End 到达最远端。
 - 纵轴：重要程度 -5 至 +5，共 11 行。
 - 任务按「结束日期 × 重要程度」定位，点的样式表示状态。
 - 同一格有多个任务时显示数量，避免重叠遮挡。
 - 悬停 0.7 秒显示任务详情；点击定位表格；双击单任务点可编辑。
-- 超出日期范围的任务保留在表格中，不会被删除或截断。
+- 远期任务可通过横向浏览查看；截止日期已过去的任务仍保留在表格中。
 
 ### 任务表格
 
@@ -79,7 +80,7 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 
 ### 年度日历
 
-已内置 2025、2026 年日历。点击底部「中国调休 + 月末周六」可查看规则、更新或导入年度 JSON 日历。
+已内置 2025、2026 年日历。点击底部「工作日规则」可查看规则、更新或导入年度 JSON 日历。
 
 尚未收录的年度会显示「法定日历待补全」，不猜测调休，不据此错误着色。空的未公布日历文件不会被视为完整日历。只有手动点击更新时才会联网获取日历，不上传个人任务。
 
@@ -108,16 +109,16 @@ cd cyber-secretary-working
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-脚本依次执行规则与存储检查、WPF 界面集成检查，并发布自包含的单文件 EXE 至 `release/计划栅格.exe`。
+脚本依次执行规则与存储检查、WPF 界面集成检查，并发布自包含的单文件 EXE 至 `release/CyberSecretray-Working.exe`。
 
-应用共有 58 项检查：41 项规则与存储检查、17 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
+应用共有 73 项检查：41 项规则与存储检查、32 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
 
 ```powershell
 # 生成带版本号的 ZIP、EXE 和 SHA256 校验文件
 powershell -NoProfile -ExecutionPolicy Bypass -File .\package.ps1
 
 # 使用独立目录启动演示，避免混入个人任务
-.\release\计划栅格.exe --demo --data-dir "D:\PlannerDemo"
+.\release\CyberSecretray-Working.exe --demo --data-dir "D:\PlannerDemo"
 ```
 
 `--demo` 仅在指定目录尚无任务文件时生成示例任务；正常双击不会生成示例。
@@ -143,9 +144,9 @@ scripts/                 发布版本号解析
 3. 校验附件及程序版本，再发布到同名 Release；Release 不存在时自动创建。
 
 ```powershell
-# 将当前提交发布为 v0.2
-git tag -a v0.2 -m "Release v0.2"
-git push origin v0.2
+# 将后续提交发布为 v0.3
+git tag -a v0.3 -m "Release v0.3"
+git push origin v0.3
 ```
 
 tag 支持 `v0.2`、`v0.2.1`、`v1.0.0-rc.1`，分别对应程序版本 `0.2.0`、`0.2.1`、`1.0.0-rc.1`；附件名称完整保留 tag。带预发布后缀的版本会标记为 GitHub Pre-release。无需为了发布而先修改 `Directory.Build.props`。

@@ -22,6 +22,8 @@ internal static class DemoTasks
             Make("规划下阶段学习", 19, 2, TaskState.NotStarted),
             Make("备份资料", 26, -1, TaskState.NotStarted),
             Make("确认下月行程", 30, 1, TaskState.NotStarted),
+            Make("下阶段项目计划", 45, 5, TaskState.NotStarted, "用于演示超过 30 天的横向时间栅格。"),
+            Make("季度复盘", 90, 3, TaskState.NotStarted),
             Make("整理本周计划 · 资料收集", 0, 4, TaskState.Completed, "与同一坐标任务合并显示数量。"),
             Make("归档上月文件", -1, -1, TaskState.Completed)
         ];

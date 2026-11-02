@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         _ready = true;
         Chart.TaskChosen += item => SelectTask(item.Id);
         Chart.TaskEditRequested += EditTask;
+        Loaded += (_, _) => Chart.Focus();
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.N && Keyboard.Modifiers == ModifierKeys.Control) { e.Handled = true; NewTask(); }
@@ -68,8 +69,6 @@ public partial class MainWindow : Window
         TodayLabel.Text = now.ToString("yyyy 年 M 月 d 日  dddd", System.Globalization.CultureInfo.GetCultureInfo("zh-CN"));
         var chartItems = TaskRules.Sort(_tasks).ToList();
         Chart.Update(chartItems, _calendar, now);
-        int inChart = _tasks.Count(t => t.EndAt.Date >= now.Date && t.EndAt.Date <= now.Date.AddDays(30));
-        ChartSummary.Text = $"图内 {inChart} 项" + (_tasks.Count > inChart ? $"  ·  范围外 {_tasks.Count - inChart} 项见表格" : "");
     }
 
     private bool Save()

@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $repository = $PSScriptRoot
 $releaseVersion = & (Join-Path $repository 'scripts\resolve-release-version.ps1') -Tag $Tag
 $tag = $releaseVersion.Tag
-$packageName = 'CyberSecretary-' + $tag + '-win-x64'
+$packageName = 'CyberSecretray-Working-' + $tag + '-win-x64'
 $staging = Join-Path $repository ('artifacts\package\' + $packageName)
 $destination = Join-Path $repository ('release\' + $tag)
 
@@ -15,7 +15,7 @@ $destination = Join-Path $repository ('release\' + $tag)
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
 $exe = Join-Path $destination ($packageName + '.exe')
 $archive = Join-Path $destination ($packageName + '.zip')
-Copy-Item -LiteralPath (Join-Path $staging '计划栅格.exe') -Destination $exe -Force
+Copy-Item -LiteralPath (Join-Path $staging 'CyberSecretray-Working.exe') -Destination $exe -Force
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -CompressionLevel Optimal -Force
 $checksums = @($exe, $archive) | ForEach-Object {
     $hash = Get-FileHash -LiteralPath $_ -Algorithm SHA256
