@@ -39,6 +39,7 @@ public static class TaskRules
 
     public static TaskUrgency Urgency(TaskItem item, DateTime today, WorkCalendar calendar)
     {
+        if (item.Status == TaskState.Completed) return TaskUrgency.Normal;
         int? position = calendar.WorkdayPosition(today, item.EndAt);
         if (position == null) return TaskUrgency.Unknown;
         if (item.Importance >= ImportantThreshold && position <= 2) return TaskUrgency.Critical;

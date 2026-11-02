@@ -30,7 +30,7 @@ internal sealed class CalendarDialog : Window
         AddText(panel, "每月最后一个周六", 14, 20);
         AddText(panel, "额外计入工作日。若这一天本身已是调休工作日，只计一次，不再追加其他周六；法定假日中的月末周六也按此额外规则计入。", 12, 8);
         AddText(panel, "提醒从今天开始计数", 14, 20);
-        AddText(panel, "今天是工作日时算第 1 个工作日。重要程度 ≥ +1，且 ≤ 2 工作日标红；< 5 工作日的所有任务标黄，红色优先。已结束任务同样按日期着色。已过截止日的任务延续提醒。", 12, 8);
+        AddText(panel, "已结束任务统一浅灰色，不参与截止提醒。对未结束任务，今天是工作日时算第 1 个工作日：重要程度 ≥ +1 且 ≤ 2 工作日标红，< 5 工作日标黄，红色优先。已过截止日的未结束任务延续提醒。", 12, 8);
         panel.Children.Add(new Border { Height = 1, Background = TaskRow.Brush("#DFE5D9"), Margin = new Thickness(0, 22, 0, 17) });
         _coverage.FontSize = 14; panel.Children.Add(_coverage); UpdateCoverage();
         AddText(panel, "日历内置于应用，离线可用。新年度发布后可更新或导入 JSON 日历；未收录的日期会显示“待补全”，不会猜测调休。", 11, 9);

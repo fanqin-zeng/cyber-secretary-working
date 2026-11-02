@@ -30,7 +30,9 @@ Check(TaskRules.Urgency(Item("a", "2026-11-04", 5), D("2026-11-02"), calendar) =
 Check(TaskRules.Urgency(Item("a", "2026-11-02", -5), D("2026-11-02"), calendar) == TaskUrgency.Soon, "unimportant due today yellow");
 Check(TaskRules.Urgency(Item("a", "2026-11-05", 0), D("2026-11-02"), calendar) == TaskUrgency.Soon, "fourth workday yellow");
 Check(TaskRules.Urgency(Item("a", "2026-11-06", 5), D("2026-11-02"), calendar) == TaskUrgency.Normal, "fifth workday excluded from yellow");
-Check(TaskRules.Urgency(Item("a", "2026-11-02", 1, TaskState.Completed), D("2026-11-02"), calendar) == TaskUrgency.Critical, "all tasks includes completed tasks");
+Check(TaskRules.Urgency(Item("a", "2026-11-02", 1, TaskState.Completed), D("2026-11-02"), calendar) == TaskUrgency.Normal, "completed important task is excluded from reminders");
+Check(TaskRules.Urgency(Item("a", "2026-11-01", 5, TaskState.Completed), D("2026-11-02"), calendar) == TaskUrgency.Normal, "completed past deadline does not become urgent");
+Check(TaskRules.Urgency(Item("a", "2027-01-05", 5, TaskState.Completed), D("2027-01-01"), calendar) == TaskUrgency.Normal, "completion overrides a missing calendar");
 Check(TaskRules.Urgency(Item("a", "2026-11-01", 1), D("2026-11-02"), calendar) == TaskUrgency.Critical, "past important deadline remains red");
 Check(TaskRules.Urgency(Item("a", "2027-01-05", 1), D("2026-12-31"), calendar) == TaskUrgency.Unknown, "unknown near-year calendar does not guess urgency");
 var completed = Item("complete", "2026-11-01", 0, TaskState.Completed);

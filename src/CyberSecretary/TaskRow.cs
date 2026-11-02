@@ -22,11 +22,12 @@ public sealed class TaskRow
     public TaskRow(TaskItem item, WorkCalendar calendar, DateTime now)
     {
         Item = item;
+        bool completed = item.Status == TaskState.Completed;
         var urgency = TaskRules.Urgency(item, now, calendar);
-        RowBackground = Brush(urgency switch { TaskUrgency.Critical => "#FFF0EB", TaskUrgency.Soon => "#FFF8E3", _ => "#FFFFFF" });
-        HintBrush = Brush(urgency switch { TaskUrgency.Critical => "#BC6854", TaskUrgency.Soon => "#AC9454", _ => "#99A38F" });
+        RowBackground = Brush(completed ? "#F1F2F3" : urgency switch { TaskUrgency.Critical => "#FFF0EB", TaskUrgency.Soon => "#FFF8E3", _ => "#FFFFFF" });
+        HintBrush = Brush(completed ? "#929A96" : urgency switch { TaskUrgency.Critical => "#BC6854", TaskUrgency.Soon => "#AC9454", _ => "#99A38F" });
         int difference = (item.EndAt.Date - now.Date).Days;
-        DeadlineHint = urgency == TaskUrgency.Unknown ? "法定日历待补全" : difference switch
+        DeadlineHint = completed ? "已结束" : urgency == TaskUrgency.Unknown ? "法定日历待补全" : difference switch
         {
             < 0 => $"已过截止日 {Math.Abs(difference)} 天",
             0 => "今天截止",
@@ -36,7 +37,7 @@ public sealed class TaskRow
         (string bg, string fg) = item.Status switch
         {
             TaskState.InProgress => ("#E1EEE5", "#437964"),
-            TaskState.Completed => ("#EDF0E9", "#879482"),
+            TaskState.Completed => ("#E5E8E9", "#7C8584"),
             TaskState.Overdue => ("#F8E1D9", "#B26C56"),
             _ => ("#EBEEE7", "#7E8D78")
         };

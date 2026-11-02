@@ -4,14 +4,14 @@
 
 Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 .NET。
 
-[下载 v0.2](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.2) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
+[下载 v0.2.1](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.2.1) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
 
 ![CyberSecretray::Working 界面，包含示例任务](docs/screenshot.png)
 
 ## 快速开始
 
-1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.2-win-x64.zip`。
-2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.2-win-x64.exe` 直接运行。
+1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.2.1-win-x64.zip`。
+2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.2.1-win-x64.exe` 直接运行。
 3. 点击表格右上角的「新建任务」，填写任务信息。
 
 支持 Windows 10 / Windows 11 x64。核心功能离线可用，不需要管理员权限。首次启动为空任务列表，截图中的任务仅用于演示。
@@ -66,13 +66,14 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 
 | 背景色 | 条件 |
 | --- | --- |
-| 红色 | 重要程度 ≥ +1，且截止日在含今天的前 2 个工作日范围内 |
-| 黄色 | 截止日在第 5 个工作日之前的所有任务 |
+| 浅灰色 | 已结束任务，优先于其他颜色规则 |
+| 红色 | 未结束、重要程度 ≥ +1，且截止日在含今天的前 2 个工作日范围内 |
+| 黄色 | 截止日在第 5 个工作日之前的其余未结束任务 |
 | 默认 | 不满足上述条件 |
 
-红色优先于黄色。已结束任务也使用相同的日期着色规则；已过截止日的任务延续提醒，重要任务红色，其余黄色。截止日在休息日时，计算今天至该截止日期之间的工作日数量，最小记为 1。
+已结束任务统一浅灰色，不参与截止提醒。未结束任务红色优先于黄色；已过截止日的未结束任务延续提醒，重要任务红色，其余黄色。截止日在休息日时，计算今天至该截止日期之间的工作日数量，最小记为 1。
 
-以 2026/11/02（周一）为例：
+以 2026/11/02（周一）的未结束任务为例：
 
 - 11/02、11/03 截止的重要任务标红。
 - 11/02 至 11/05 截止的其他任务标黄。
@@ -111,7 +112,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 脚本依次执行规则与存储检查、WPF 界面集成检查，并发布自包含的单文件 EXE 至 `release/CyberSecretray-Working.exe`。
 
-应用共有 73 项检查：41 项规则与存储检查、32 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
+应用共有 79 项检查：43 项规则与存储检查、36 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
 
 ```powershell
 # 生成带版本号的 ZIP、EXE 和 SHA256 校验文件

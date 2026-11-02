@@ -128,7 +128,13 @@ internal static class Program
             Check(chart.FirstVisibleDay == 0, "Home returns to today");
             chart.Update([dialog.Result], calendar, today);
             var row = (TaskRow)table.Items[0];
-            Check(((SolidColorBrush)row.RowBackground).Color == (Color)ColorConverter.ConvertFromString("#FFF0EB"), "completed important near task remains red");
+            var completedColor = (Color)ColorConverter.ConvertFromString("#F1F2F3");
+            Check(((SolidColorBrush)row.RowBackground).Color == completedColor, "completed important task uses light gray background");
+            Check(row.DeadlineHint == "已结束", "completed task no longer displays a deadline warning");
+            var pastCompleted = dialog.Result.Copy(); pastCompleted.EndAt = today.AddDays(-1); pastCompleted.StartAt = today.AddDays(-2);
+            Check(((SolidColorBrush)new TaskRow(pastCompleted, calendar, today).RowBackground).Color == completedColor, "completed past task also uses light gray");
+            var active = dialog.Result.Copy(); active.Status = TaskState.InProgress;
+            Check(((SolidColorBrush)new TaskRow(active, calendar, today).RowBackground).Color == (Color)ColorConverter.ConvertFromString("#FFF0EB"), "unfinished important task retains red reminder");
             var search = (TextBox)window.FindName("SearchBox");
             search.Text = "无匹配关键词";
             Check(table.Items.Count == 0 && ((FrameworkElement)window.FindName("EmptyState")).Visibility == Visibility.Visible, "search displays empty state");
@@ -157,6 +163,9 @@ internal static class Program
             table.SelectedIndex = 0; window.UpdateLayout();
             var cell = Descendants<DataGridCell>(table).FirstOrDefault(c => c.IsSelected);
             Check(cell != null && cell.Background is SolidColorBrush { Color.A: 0 }, "selection preserves task warning background");
+            table.SelectedIndex = 1; window.UpdateLayout();
+            var completedGridRow = (DataGridRow)table.ItemContainerGenerator.ContainerFromIndex(1);
+            Check(((SolidColorBrush)completedGridRow.Background).Color == completedColor, "selected completed row retains light gray background");
             window.Close();
             var reopened = new MainWindow(store, store.Load()); reopened.Show(); reopened.UpdateLayout();
             Check(((DataGrid)reopened.FindName("TaskTable")).Items.Count == 2, "tasks reload in reopened window");
