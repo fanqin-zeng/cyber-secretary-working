@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+.tools/
+artifacts/
+release/
+.vs/
+.idea/
+*.suo
+*.user
+*.tmp
+*.bak
+tasks.json
+tasks.json.*
