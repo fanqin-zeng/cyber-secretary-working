@@ -19,7 +19,7 @@ public sealed class TaskChart : FrameworkElement
     private WorkCalendar _calendar = WorkCalendar.LoadBuiltIn();
     private DateTime _today = DateTime.Today;
     private readonly Dictionary<(int Day, int Importance), List<TaskItem>> _cells = [];
-    private readonly DispatcherTimer _hoverTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
+    private readonly DispatcherTimer _hoverTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private readonly ToolTip _tooltip = new() { Placement = PlacementMode.Custom, StaysOpen = true, MaxWidth = 480, Padding = new Thickness(17) };
     private (int Day, int Importance)? _hoverCell;
     private HwndSource? _source;

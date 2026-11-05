@@ -35,6 +35,11 @@ public partial class MainWindow : Window
         {
             var now = DateTime.Now;
             if (now.Date != _lastRefreshDate || _tasks.Any(t => TaskRules.EffectiveStatus(t, now) != t.Status)) Refresh();
+            else
+            {
+                var visible = TaskTable.Items.Cast<TaskRow>().Select(row => row.Item).ToList();
+                if (!visible.SequenceEqual(TaskRules.Sort(visible, now))) Refresh();
+            }
         };
         Closed += (_, _) => _clock.Stop();
         _clock.Start(); Refresh();
@@ -54,7 +59,7 @@ public partial class MainWindow : Window
         }
         if (changed) Save();
         var query = SearchBox.Text.Trim();
-        var visible = TaskRules.Sort(_tasks).Where(t => query.Length == 0 ||
+        var visible = TaskRules.Sort(_tasks, now).Where(t => query.Length == 0 ||
             t.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || t.Notes.Contains(query, StringComparison.OrdinalIgnoreCase) || t.Collaborators.Contains(query, StringComparison.OrdinalIgnoreCase))
             .Select(t => new TaskRow(t, _calendar, now)).ToList();
         TaskTable.ItemsSource = visible;
@@ -126,6 +131,16 @@ public partial class MainWindow : Window
 
     private void NewTaskClick(object sender, RoutedEventArgs e) => NewTask();
     private void EditTaskClick(object sender, RoutedEventArgs e) { if ((sender as FrameworkElement)?.DataContext is TaskRow row) EditTask(row.Item); }
+    private void CompleteTaskClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not TaskRow { CanComplete: true } row) return;
+        var previousStatus = row.Item.Status;
+        row.Item.Status = TaskState.Completed;
+        if (!Save()) row.Item.Status = previousStatus;
+        else ShowNotice("任务已结束");
+        Refresh();
+    }
+
     private void DeleteTaskClick(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not TaskRow row) return;

@@ -46,8 +46,11 @@ public static class TaskRules
         return position < 5 ? TaskUrgency.Soon : TaskUrgency.Normal;
     }
 
-    public static IReadOnlyList<TaskItem> Sort(IEnumerable<TaskItem> tasks) => tasks
+    public static IReadOnlyList<TaskItem> Sort(IEnumerable<TaskItem> tasks, DateTime? completedByDistanceFrom = null) => tasks
         .OrderBy(t => t.Status == TaskState.Completed)
+        .ThenBy(t => t.Status == TaskState.Completed && completedByDistanceFrom is { } reference
+            ? Math.Abs((t.EndAt - reference).Ticks)
+            : 0L)
         .ThenBy(t => t.EndAt)
         .ThenBy(t => t.CreatedAt)
         .ThenBy(t => t.Id)

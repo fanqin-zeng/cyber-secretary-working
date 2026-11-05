@@ -4,14 +4,14 @@
 
 Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 .NET。
 
-[下载 v0.2.1](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.2.1) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
+[下载 v0.2.2](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.2.2) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
 
 ![CyberSecretray::Working 界面，包含示例任务](docs/screenshot.png)
 
 ## 快速开始
 
-1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.2.1-win-x64.zip`。
-2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.2.1-win-x64.exe` 直接运行。
+1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.2.2-win-x64.zip`。
+2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.2.2-win-x64.exe` 直接运行。
 3. 点击表格右上角的「新建任务」，填写任务信息。
 
 支持 Windows 10 / Windows 11 x64。核心功能离线可用，不需要管理员权限。首次启动为空任务列表，截图中的任务仅用于演示。
@@ -39,13 +39,13 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 - 纵轴：重要程度 -5 至 +5，共 11 行。
 - 任务按「结束日期 × 重要程度」定位，点的样式表示状态。
 - 同一格有多个任务时显示数量，避免重叠遮挡。
-- 悬停 0.7 秒显示任务详情；点击定位表格；双击单任务点可编辑。
+- 悬停 0.3 秒显示任务详情；点击定位表格；双击单任务点可编辑。
 - 远期任务可通过横向浏览查看；截止日期已过去的任务仍保留在表格中。
 
 ### 任务表格
 
-- 未结束任务在前，已结束任务在后；两组内均按结束时间升序排列。
-- 支持新建、编辑、删除，以及按任务名、备注、协作人搜索。
+- 未结束任务在前，按结束时间升序排列。已结束任务在后，按结束时间距当前时刻的远近排列。
+- 支持新建、标记完成、编辑、删除，以及按任务名、备注、协作人搜索。
 - 表格筛选不影响栅格，栅格始终显示完整任务范围。
 - `Ctrl+N` 新建任务，双击表格任务可编辑，编辑时 `Ctrl+Enter` 保存。
 
@@ -112,7 +112,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 脚本依次执行规则与存储检查、WPF 界面集成检查，并发布自包含的单文件 EXE 至 `release/CyberSecretray-Working.exe`。
 
-应用共有 79 项检查：43 项规则与存储检查、36 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
+应用共有 87 项检查：45 项规则与存储检查、42 项界面集成检查。发布流程还会检查版本 tag、附件校验值与 EXE 中的版本号。测试使用独立临时目录，不写入个人任务。
 
 ```powershell
 # 生成带版本号的 ZIP、EXE 和 SHA256 校验文件

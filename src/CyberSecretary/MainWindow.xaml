@@ -2,7 +2,22 @@
   <Window.Resources>
     <Style TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#F7F8F5"/><Setter Property="Foreground" Value="#849088"/><Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Normal"/><Setter Property="Padding" Value="13,12"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="#E6EAE3"/></Style>
     <Style TargetType="DataGridCell"><Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#34443C"/><Setter Property="Padding" Value="13,9"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DataGridCell"><Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter VerticalAlignment="Center"/></Border></ControlTemplate></Setter.Value></Setter><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#34443C"/></Trigger></Style.Triggers></Style>
-    <Style TargetType="DataGridRow"><Setter Property="Background" Value="{Binding RowBackground}"/><Setter Property="Foreground" Value="#34443C"/><Setter Property="BorderBrush" Value="#EDF0E9"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="MinHeight" Value="58"/><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="BorderBrush" Value="#669D8D"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="Cursor" Value="Hand"/></Trigger></Style.Triggers></Style>
+    <Style TargetType="DataGridRow">
+      <Setter Property="Background" Value="{Binding RowBackground}"/>
+      <Setter Property="Foreground" Value="#34443C"/>
+      <Setter Property="BorderBrush" Value="#EDF0E9"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/>
+      <Setter Property="MinHeight" Value="58"/>
+      <Style.Triggers>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="{Binding SelectedRowBackground}"/>
+          <Setter Property="BorderBrush" Value="Transparent"/>
+        </Trigger>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Cursor" Value="Hand"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
     <Style x:Key="TableText" TargetType="TextBlock"><Setter Property="TextTrimming" Value="CharacterEllipsis"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
   </Window.Resources>
   <Grid Margin="30,16,30,12">
@@ -43,14 +58,45 @@
         <Grid Grid.Row="1">
           <DataGrid x:Name="TaskTable" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="None" BorderThickness="0" Background="White" SelectionMode="Single" SelectionUnit="FullRow" RowHeaderWidth="0" FontSize="14" EnableRowVirtualization="True" MouseDoubleClick="TableDoubleClick" ScrollViewer.HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-              <DataGridTemplateColumn Header="任务名称" Width="1.9*" MinWidth="165"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Item.Title}" FontWeight="Medium" Style="{StaticResource TableText}" ToolTip="{Binding Item.Title}" ToolTipService.InitialShowDelay="700"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-              <DataGridTextColumn Header="开始时间" Binding="{Binding StartText}" Width="166" ElementStyle="{StaticResource TableText}"/>
-              <DataGridTemplateColumn Header="结束时间 ↑" Width="172"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding EndText}"/><TextBlock Text="{Binding DeadlineHint}" FontSize="11" Foreground="{Binding HintBrush}" Margin="0,3,0,0"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="任务名称" Width="1.9*" MinWidth="165">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <Grid>
+                      <Grid.ColumnDefinitions><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                      <Ellipse Width="7" Height="7" Fill="{StaticResource Accent}" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Ellipse.Style>
+                          <Style TargetType="Ellipse">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </Ellipse.Style>
+                      </Ellipse>
+                      <TextBlock Grid.Column="1" Text="{Binding Item.Title}" FontWeight="Medium" Style="{StaticResource TableText}" ToolTip="{Binding Item.Title}" ToolTipService.InitialShowDelay="700"/>
+                    </Grid>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Header="开始时间" Binding="{Binding StartText}" Width="151" ElementStyle="{StaticResource TableText}"/>
+              <DataGridTemplateColumn Header="结束时间" Width="157"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding EndText}"/><TextBlock Text="{Binding DeadlineHint}" FontSize="11" Foreground="{Binding HintBrush}" Margin="0,3,0,0"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
               <DataGridTemplateColumn Header="重要程度" Width="84"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ImportanceText}" FontFamily="Consolas" FontWeight="SemiBold" Foreground="{Binding ImportanceBrush}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
               <DataGridTemplateColumn Header="状态" Width="100"><DataGridTemplateColumn.CellTemplate><DataTemplate><Border Background="{Binding StatusBackground}" CornerRadius="4" Padding="8,4" HorizontalAlignment="Left"><TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusForeground}" FontSize="12"/></Border></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
               <DataGridTextColumn Header="协作人" Binding="{Binding CollaboratorText}" Width="100" ElementStyle="{StaticResource TableText}"/>
               <DataGridTemplateColumn Header="备注" Width="*" MinWidth="105"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding NotesText}" Foreground="#859084" Style="{StaticResource TableText}" ToolTip="{Binding Item.Notes}" ToolTipService.InitialShowDelay="700"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="操作" Width="104"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><Button Content="编辑" FontSize="12" Style="{StaticResource QuietButton}" Click="EditTaskClick" Padding="3,6"/><Button Content="删除" FontSize="12" Foreground="#A68E84" Style="{StaticResource QuietButton}" Click="DeleteTaskClick" Margin="8,0,0,0" Padding="3,6"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="操作" Width="134">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                      <Button Content="完成" FontSize="12" Style="{StaticResource QuietButton}" Click="CompleteTaskClick" IsEnabled="{Binding CanComplete}" Padding="3,6"/>
+                      <Button Content="编辑" FontSize="12" Style="{StaticResource QuietButton}" Click="EditTaskClick" Margin="8,0,0,0" Padding="3,6"/>
+                      <Button Content="删除" FontSize="12" Foreground="#A68E84" Style="{StaticResource QuietButton}" Click="DeleteTaskClick" Margin="8,0,0,0" Padding="3,6"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
             </DataGrid.Columns>
           </DataGrid>
           <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False"><TextBlock x:Name="EmptyTitle" Text="从一个小计划开始" FontSize="20" Foreground="#759080" HorizontalAlignment="Center"/><TextBlock x:Name="EmptyDescription" Text="点击右上角「新建任务」，安排接下来重要的事。" FontSize="14" Foreground="#A0AA9E" Margin="0,10,0,0"/></StackPanel>

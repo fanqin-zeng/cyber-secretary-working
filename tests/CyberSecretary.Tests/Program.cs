@@ -38,6 +38,13 @@ Check(TaskRules.Urgency(Item("a", "2027-01-05", 1), D("2026-12-31"), calendar) =
 var completed = Item("complete", "2026-11-01", 0, TaskState.Completed);
 var late = Item("later", "2026-11-04"); var early = Item("earlier", "2026-11-03");
 Check(TaskRules.Sort(new[] { completed, late, early }).SequenceEqual(new[] { early, late, completed }), "completion primary, deadline secondary sorting");
+var recentlyCompleted = Item("recent", "2026-11-03", 0, TaskState.Completed);
+var futureCompleted = Item("future deadline", "2026-11-05", 0, TaskState.Completed);
+var mixed = new[] { completed, late, futureCompleted, early, recentlyCompleted };
+Check(TaskRules.Sort(mixed, D("2026-11-04")).SequenceEqual(new[] { early, late, recentlyCompleted, futureCompleted, completed }),
+    "table keeps pending deadlines ascending and orders completed deadlines by distance from now");
+Check(TaskRules.Sort(mixed, D("2026-11-05")).SequenceEqual(new[] { early, late, futureCompleted, recentlyCompleted, completed }),
+    "completed deadlines are reordered as the reference time advances");
 Check(TaskRules.EffectiveStatus(early, D("2026-11-04")) == TaskState.Overdue, "expired task becomes overdue");
 Check(TaskRules.EffectiveStatus(completed, D("2026-11-04")) == TaskState.Completed, "completion survives expiry");
 Check(TaskRules.Validate(Item(" ", "2026-11-03")) != null, "blank title rejected");

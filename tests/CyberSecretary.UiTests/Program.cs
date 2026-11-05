@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CyberSecretary;
 using CyberSecretary.Core;
+using Ellipse = System.Windows.Shapes.Ellipse;
 
 internal static class Program
 {
@@ -147,7 +148,7 @@ internal static class Program
                     var newDialog = app.Windows.OfType<TaskDialog>().Single();
                     ((TextBox)newDialog.FindName("TitleInput")).Text = "从主界面创建";
                     ((DatePicker)newDialog.FindName("StartDate")).SelectedDate = DateTime.Today;
-                    ((DatePicker)newDialog.FindName("EndDate")).SelectedDate = DateTime.Today.AddDays(1);
+                    ((DatePicker)newDialog.FindName("EndDate")).SelectedDate = DateTime.Today.AddDays(14);
                     ((TextBox)newDialog.FindName("StartTime")).Text = "09:00";
                     ((TextBox)newDialog.FindName("EndTime")).Text = "18:00";
                     ((Button)newDialog.FindName("SaveButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -163,11 +164,34 @@ internal static class Program
             table.SelectedIndex = 0; window.UpdateLayout();
             var cell = Descendants<DataGridCell>(table).FirstOrDefault(c => c.IsSelected);
             Check(cell != null && cell.Background is SolidColorBrush { Color.A: 0 }, "selection preserves task warning background");
+            var unfinishedGridRow = (DataGridRow)table.ItemContainerGenerator.ContainerFromIndex(0);
+            var selectionDot = Descendants<Ellipse>(unfinishedGridRow).Single();
+            Check(unfinishedGridRow.Opacity == 1 && unfinishedGridRow.BorderBrush is SolidColorBrush { Color.A: 0 } &&
+                ((SolidColorBrush)unfinishedGridRow.Background).Color == (Color)ColorConverter.ConvertFromString("#DBEFE7") &&
+                selectionDot.Visibility == Visibility.Visible,
+                "selecting a white row uses mint background and a dot without fading text or showing a bottom border");
             table.SelectedIndex = 1; window.UpdateLayout();
+            Check(((SolidColorBrush)unfinishedGridRow.Background).Color == Colors.White &&
+                unfinishedGridRow.BorderBrush is SolidColorBrush { Color.A: > 0 } && selectionDot.Visibility == Visibility.Hidden,
+                "deselected row restores its original background and separator and hides its dot");
             var completedGridRow = (DataGridRow)table.ItemContainerGenerator.ContainerFromIndex(1);
-            Check(((SolidColorBrush)completedGridRow.Background).Color == completedColor, "selected completed row retains light gray background");
+            Check(((SolidColorBrush)completedGridRow.Background).Color == (Color)ColorConverter.ConvertFromString("#E3E7E9"),
+                "selected completed row uses the gray selection tint");
+            Check(!Descendants<Button>(completedGridRow).Single(button => Equals(button.Content, "完成")).IsEnabled,
+                "completed row disables the complete action");
+            var completeButton = Descendants<Button>(unfinishedGridRow).Single(button => Equals(button.Content, "完成"));
+            var unfinishedTask = ((TaskRow)unfinishedGridRow.Item).Item.Copy();
+            Check(completeButton.IsEnabled, "unfinished row offers the complete action");
+            completeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var updatedRow = table.Items.Cast<TaskRow>().Single(task => task.Item.Id == unfinishedTask.Id);
+            Check(updatedRow.StatusText == "已结束" && ((SolidColorBrush)updatedRow.RowBackground).Color == completedColor,
+                "completing a task immediately updates its status and background");
             window.Close();
-            var reopened = new MainWindow(store, store.Load()); reopened.Show(); reopened.UpdateLayout();
+            var savedTasks = store.Load();
+            var savedTask = savedTasks.Single(task => task.Id == unfinishedTask.Id);
+            Check(savedTask.Status == TaskState.Completed && savedTask.EndAt == unfinishedTask.EndAt,
+                "complete action persists the new status and retains the deadline");
+            var reopened = new MainWindow(store, savedTasks); reopened.Show(); reopened.UpdateLayout();
             Check(((DataGrid)reopened.FindName("TaskTable")).Items.Count == 2, "tasks reload in reopened window");
             reopened.Close();
             Console.WriteLine($"\n{_assertions} UI integration assertions passed.");
