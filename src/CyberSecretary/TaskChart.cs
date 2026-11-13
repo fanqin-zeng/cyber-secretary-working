@@ -149,12 +149,12 @@ public sealed class TaskChart : FrameworkElement
         {
             int day = FirstVisibleDay + column;
             bool? isWorkday = _calendar.IsWorkday(_today.AddDays(day));
-            if (isWorkday != true) dc.DrawRectangle(TaskRow.Brush(isWorkday == null ? "#FAFAF6" : "#F5F6F1"), null, new Rect(plot.X + column * cellW, plot.Y, cellW, plot.Height));
+            if (isWorkday != true) dc.DrawRectangle(Appearance.Brush(isWorkday == null ? "UnknownColumn" : "RestColumn"), null, new Rect(plot.X + column * cellW, plot.Y, cellW, plot.Height));
         }
-        if (FirstVisibleDay == 0) dc.DrawRectangle(TaskRow.Brush("#EAF2EA"), null, new Rect(plot.X, plot.Y, cellW, plot.Height));
+        if (FirstVisibleDay == 0) dc.DrawRectangle(Appearance.Brush("Selection"), null, new Rect(plot.X, plot.Y, cellW, plot.Height));
         if (_hoverCell is { } hover)
-            dc.DrawRectangle(TaskRow.Brush("#E6EEE3"), null, new Rect(plot.X + (hover.Day - FirstVisibleDay) * cellW, plot.Y + (5 - hover.Importance) * cellH, cellW, cellH));
-        var gridPen = new Pen(TaskRow.Brush("#E4E9DF"), .7);
+            dc.DrawRectangle(Appearance.Brush("Selection"), null, new Rect(plot.X + (hover.Day - FirstVisibleDay) * cellW, plot.Y + (5 - hover.Importance) * cellH, cellW, cellH));
+        var gridPen = new Pen(Appearance.Brush("Line"), .7);
         for (int i = 0; i <= VisibleDayCount; i++)
         {
             double x = plot.X + i * cellW;
@@ -168,36 +168,36 @@ public sealed class TaskChart : FrameworkElement
         for (int importance = 5; importance >= -5; importance--)
         {
             double y = plot.Y + (5 - importance + .5) * cellH;
-            Text(dc, importance > 0 ? "+" + importance : importance.ToString(), new Point(plot.X - 18, y - 9), 12, importance == 0 ? "#597866" : "#8D9C86", true);
+            Text(dc, importance > 0 ? "+" + importance : importance.ToString(), new Point(plot.X - 18, y - 9), 12, importance == 0 ? "Accent" : "Muted", true);
         }
         for (int column = 0; column < VisibleDayCount; column++)
         {
             int day = FirstVisibleDay + column;
             double x = plot.X + (column + .5) * cellW;
-            Text(dc, day == 0 ? "0d" : day.ToString(), new Point(x, plot.Bottom + 8), 11, day == 0 ? "#467A61" : "#87947E", true);
-            if (column % 5 == 0) Text(dc, _today.AddDays(day).ToString("MM/dd"), new Point(x, plot.Bottom + 27), 11, "#98A28E", true);
-            if (WorkCalendar.IsLastSaturday(_today.AddDays(day)))
-                dc.DrawEllipse(TaskRow.Brush("#C6A76F"), null, new Point(x, plot.Y - 5), 1.7, 1.7);
+            Text(dc, day == 0 ? "0d" : day.ToString(), new Point(x, plot.Bottom + 8), 11, day == 0 ? "Accent" : "Muted", true);
+            if (column % 5 == 0) Text(dc, _today.AddDays(day).ToString("MM/dd"), new Point(x, plot.Bottom + 27), 11, "Muted", true);
+            if (_calendar.RestDays == RestDayRule.Huawei && WorkCalendar.IsLastSaturday(_today.AddDays(day)))
+                dc.DrawEllipse(Appearance.Brush("Warning"), null, new Point(x, plot.Y - 5), 1.7, 1.7);
         }
         foreach (var (key, items) in _cells)
         {
             if (key.Day < FirstVisibleDay || key.Day > LastVisibleDay) continue;
             var item = items.FirstOrDefault(t => t.Status != TaskState.Completed) ?? items[0];
             var center = new Point(plot.X + (key.Day - FirstVisibleDay + .5) * cellW, plot.Y + (5 - key.Importance + .5) * cellH);
-            var color = TaskRow.Brush(item.Status switch { TaskState.Completed => "#A1AEA5", TaskState.Overdue => "#CB6D59", _ => "#3E7D6E" });
+            var color = Appearance.Brush(item.Status switch { TaskState.Completed => "Muted", TaskState.Overdue => "Danger", _ => "Accent" });
             double radius = Math.Min(cellH * .4, items.Count > 1 ? 10.5 : 6.2);
-            if (items.Count == 1 && item.Status == TaskState.Completed) dc.DrawEllipse(Brushes.White, new Pen(color, 1.8), center, radius, radius);
+            if (items.Count == 1 && item.Status == TaskState.Completed) dc.DrawEllipse(Appearance.Brush("Surface"), new Pen(color, 1.8), center, radius, radius);
             else
             {
-                dc.DrawEllipse(color, new Pen(Brushes.White, 1.5), center, radius, radius);
-                if (items.Count > 1) Text(dc, items.Count > 99 ? "+" : items.Count.ToString(), new Point(center.X, center.Y - 8), 11, "#FFFFFF", true);
+                dc.DrawEllipse(color, new Pen(Appearance.Brush("Surface"), 1.5), center, radius, radius);
+                if (items.Count > 1) Text(dc, items.Count > 99 ? "+" : items.Count.ToString(), new Point(center.X, center.Y - 8), 11, item.Status == TaskState.Overdue ? "Surface" : "AccentInk", true);
             }
         }
     }
 
     private void Text(DrawingContext dc, string text, Point point, double size, string color, bool centered = false)
     {
-        var formatted = new FormattedText(text, CultureInfo.GetCultureInfo("zh-CN"), FlowDirection.LeftToRight, Face, size, TaskRow.Brush(color), VisualTreeHelper.GetDpi(this).PixelsPerDip);
+        var formatted = new FormattedText(text, CultureInfo.GetCultureInfo("zh-CN"), FlowDirection.LeftToRight, Face, size, Appearance.Brush(color), VisualTreeHelper.GetDpi(this).PixelsPerDip);
         dc.DrawText(formatted, centered ? new Point(point.X - formatted.Width / 2, point.Y) : point);
     }
 
@@ -232,19 +232,19 @@ public sealed class TaskChart : FrameworkElement
         if (_hoverCell is not { } key) return;
         var date = _today.AddDays(key.Day);
         var panel = new StackPanel();
-        panel.Children.Add(new TextBlock { Text = $"{date:yyyy/MM/dd}   ·   重要程度 {(key.Importance > 0 ? "+" : "")}{key.Importance}", FontSize = 13, Foreground = TaskRow.Brush("#637C68") });
-        panel.Children.Add(new TextBlock { Text = _calendar.Describe(date), FontSize = 12, Foreground = TaskRow.Brush("#9BA58E"), Margin = new Thickness(0, 4, 0, 5) });
+        panel.Children.Add(new TextBlock { Text = $"{date:yyyy/MM/dd}   ·   重要程度 {(key.Importance > 0 ? "+" : "")}{key.Importance}", FontSize = 13, Foreground = Appearance.Brush("Accent") });
+        panel.Children.Add(new TextBlock { Text = _calendar.Describe(date), FontSize = 12, Foreground = Appearance.Brush("Muted"), Margin = new Thickness(0, 4, 0, 5) });
         if (_cells.TryGetValue(key, out var items))
         {
             foreach (var item in items)
             {
-                panel.Children.Add(new Border { Height = 1, Background = TaskRow.Brush("#E8ECE2"), Margin = new Thickness(0, 8, 0, 10) });
+                panel.Children.Add(new Border { Height = 1, Background = Appearance.Brush("Line"), Margin = new Thickness(0, 8, 0, 10) });
                 panel.Children.Add(new TextBlock { Text = item.Title, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
-                panel.Children.Add(new TextBlock { Text = TaskRules.StatusText(item.Status) + $"   ·   {item.StartAt:MM/dd HH:mm} — {item.EndAt:MM/dd HH:mm}", FontSize = 12, Foreground = TaskRow.Brush("#7F907A"), Margin = new Thickness(0, 6, 0, 0) });
+                panel.Children.Add(new TextBlock { Text = TaskRules.StatusText(item.Status) + $"   ·   {item.StartAt:MM/dd HH:mm} — {item.EndAt:MM/dd HH:mm}", FontSize = 12, Foreground = Appearance.Brush("Muted"), Margin = new Thickness(0, 6, 0, 0) });
                 if (item.Notes.Length > 0) panel.Children.Add(new TextBlock { Text = item.Notes, FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
             }
         }
-        else panel.Children.Add(new TextBlock { Text = "这个栅格暂无任务", FontSize = 13, Margin = new Thickness(0, 7, 0, 2), Foreground = TaskRow.Brush("#95A08C") });
+        else panel.Children.Add(new TextBlock { Text = "这个栅格暂无任务", FontSize = 13, Margin = new Thickness(0, 7, 0, 2), Foreground = Appearance.Brush("Muted") });
         _tooltip.Content = new ScrollViewer { Content = panel, MaxHeight = 360, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         _tooltip.IsOpen = true;
     }

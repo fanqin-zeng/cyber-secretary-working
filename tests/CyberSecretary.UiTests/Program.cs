@@ -103,6 +103,16 @@ internal static class Program
             window.Show(); window.UpdateLayout();
             var table = (DataGrid)window.FindName("TaskTable");
             Check(table.Items.Count == 1, "main table shows task");
+            Check(window.WindowStyle == WindowStyle.None &&
+                System.Windows.Shell.WindowChrome.GetWindowChrome(window) is { CaptionHeight: > 0 } chrome &&
+                chrome.ResizeBorderThickness.Left > 0, "custom window has a draggable caption and resize edges");
+            var maximize = (Button)window.FindName("MaximizeButton");
+            maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+            Check(window.WindowState == WindowState.Maximized, "custom caption button maximizes the window");
+            maximize.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+            Check(window.WindowState == WindowState.Normal, "custom caption button restores the window");
             window.Dispatcher.BeginInvoke(() =>
             {
                 var rules = app.Windows.Cast<Window>().Single(open => open.Title == "工作日规则");
@@ -231,7 +241,26 @@ internal static class Program
                 nextTask.Importance == unfinishedTask.Importance && nextTask.Notes == unfinishedTask.Notes,
                 "completing a recurring task persists exactly one next occurrence with shifted dates");
             Check(((DataGrid)reopened.FindName("TaskTable")).Items.Count == 3, "completed history and next occurrence reload");
+            var skinButton = (Button)reopened.FindName("SkinButton");
+            skinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var skinMenu = skinButton.ContextMenu;
+            var options = skinMenu.Items.OfType<MenuItem>().Where(item => item.IsCheckable).ToList();
+            Check(options.Count == 10 && options.Count(item => item.IsChecked) == 1 &&
+                options.Single(item => item.IsChecked).Header as string == "浅绿卡片", "skin picker offers ten choices with one active skin");
+            var originalBackground = reopened.Background;
+            options.Single(item => Equals(item.Header, "午夜蓝")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            skinMenu.IsOpen = false;
+            reopened.UpdateLayout();
+            var darkBackground = ((SolidColorBrush)reopened.Background).Color;
+            var darkTable = (DataGrid)reopened.FindName("TaskTable");
+            var finishedRow = darkTable.Items.Cast<TaskRow>().First(item => item.Item.Status == TaskState.Completed);
+            Check(!Equals(reopened.Background, originalBackground) && darkBackground.R < 40 &&
+                ((SolidColorBrush)finishedRow.RowBackground).Color.R < 80, "changing skin repaints the window and task rows");
             reopened.Close();
+            var themed = new MainWindow(store, store.Load());
+            Check(((SolidColorBrush)themed.Background).Color == darkBackground &&
+                File.ReadAllText(Path.Combine(folder, "skin.txt")) == "midnight", "dark skin survives reopening");
+            themed.Close();
             Console.WriteLine($"\n{_assertions} UI integration assertions passed.");
             return 0;
         }

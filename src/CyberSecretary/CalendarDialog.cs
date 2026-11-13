@@ -42,16 +42,16 @@ internal sealed class CalendarDialog : Window
         panel.Children.Add(ruleInput);
         var ruleDetail = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 14, Margin = new Thickness(0, 8, 0, 0) };
         panel.Children.Add(ruleDetail);
-        var ruleError = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = TaskRow.Brush("#BC6854"), Visibility = Visibility.Collapsed };
+        var ruleError = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Appearance.Brush("Danger"), Visibility = Visibility.Collapsed };
         panel.Children.Add(ruleError);
         AddText(panel, "提醒从今天开始计数", 14, 20);
         AddText(panel, "已结束任务统一浅灰色，不参与截止提醒。对未结束任务，今天是工作日时算第 1 个工作日：重要程度 ≥ +1 且 ≤ 2 工作日标红，< 5 工作日标黄，红色优先。已过截止日的未结束任务延续提醒。", 12, 8);
         var holidayPanel = new StackPanel();
         panel.Children.Add(holidayPanel);
-        holidayPanel.Children.Add(new Border { Height = 1, Background = TaskRow.Brush("#DFE5D9"), Margin = new Thickness(0, 22, 0, 17) });
+        holidayPanel.Children.Add(new Border { Height = 1, Background = Appearance.Brush("Line"), Margin = new Thickness(0, 22, 0, 17) });
         _coverage.FontSize = 14; holidayPanel.Children.Add(_coverage); UpdateCoverage();
         AddText(holidayPanel, "日历内置于应用，离线可用。新年度发布后可更新或导入 JSON 日历；未收录的日期会显示“待补全”。", 11, 9);
-        _message.Foreground = TaskRow.Brush("#7D917C"); holidayPanel.Children.Add(_message);
+        _message.Foreground = Appearance.Brush("Muted"); holidayPanel.Children.Add(_message);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal };
         _update.Style = (Style)FindResource("PrimaryButton"); _update.Margin = new Thickness(0, 0, 10, 0); _update.Click += async (_, _) => await UpdateOnline();
         _import.Click += (_, _) => Import(); buttons.Children.Add(_update); buttons.Children.Add(_import); holidayPanel.Children.Add(buttons);
@@ -91,7 +91,7 @@ internal sealed class CalendarDialog : Window
     private static void AddText(Panel panel, string text, double size, double top) => panel.Children.Add(new TextBlock
     {
         Text = text, TextWrapping = TextWrapping.Wrap, FontSize = size + 2, Margin = new Thickness(0, top, 0, 0),
-        Foreground = TaskRow.Brush(size >= 14 ? "#3D5F49" : "#8A9783"), LineHeight = (size + 2) * 1.7
+        Foreground = Appearance.Brush(size >= 14 ? "Ink" : "Muted"), LineHeight = (size + 2) * 1.7
     });
 
     private void UpdateCoverage() => _coverage.Text = "已收录法定日历：" + string.Join("、", _calendar.CoveredYears) + " 年";

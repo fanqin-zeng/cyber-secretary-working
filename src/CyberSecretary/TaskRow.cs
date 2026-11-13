@@ -16,7 +16,7 @@ public sealed class TaskRow
     public Brush RowBackground { get; }
     public Brush SelectedRowBackground { get; }
     public Brush HintBrush { get; }
-    public Brush ImportanceBrush => Brush(Item.Importance >= 1 ? "#477565" : "#87978B");
+    public Brush ImportanceBrush => Appearance.Brush(Item.Importance >= 1 ? "Accent" : "Muted");
     public Brush StatusBackground { get; }
     public Brush StatusForeground { get; }
 
@@ -25,15 +25,15 @@ public sealed class TaskRow
         Item = item;
         bool completed = item.Status == TaskState.Completed;
         var urgency = TaskRules.Urgency(item, now, calendar);
-        var (rowColor, selectedColor) = completed ? ("#F1F2F3", "#E3E7E9") : urgency switch
+        var (rowColor, selectedColor) = completed ? ("Completed", "CompletedSelected") : urgency switch
         {
-            TaskUrgency.Critical => ("#FFF0EB", "#F8DCD5"),
-            TaskUrgency.Soon => ("#FFF8E3", "#F6EAC6"),
-            _ => ("#FFFFFF", "#DBEFE7")
+            TaskUrgency.Critical => ("Critical", "CriticalSelected"),
+            TaskUrgency.Soon => ("Soon", "SoonSelected"),
+            _ => ("Surface", "Selection")
         };
-        RowBackground = Brush(rowColor);
-        SelectedRowBackground = Brush(selectedColor);
-        HintBrush = Brush(completed ? "#929A96" : urgency switch { TaskUrgency.Critical => "#BC6854", TaskUrgency.Soon => "#AC9454", _ => "#99A38F" });
+        RowBackground = Appearance.Brush(rowColor);
+        SelectedRowBackground = Appearance.Brush(selectedColor);
+        HintBrush = Appearance.Brush(urgency switch { TaskUrgency.Critical => "Danger", TaskUrgency.Soon => "Warning", _ => "Muted" });
         int difference = (item.EndAt.Date - now.Date).Days;
         DeadlineHint = completed ? "已结束" : urgency == TaskUrgency.Unknown ? "法定日历待补全" : difference switch
         {
@@ -44,15 +44,10 @@ public sealed class TaskRow
         };
         (string bg, string fg) = item.Status switch
         {
-            TaskState.Completed => ("#E5E8E9", "#7C8584"),
-            TaskState.Overdue => ("#F8E1D9", "#B26C56"),
-            _ => ("#E1EEE5", "#437964")
+            TaskState.Completed => ("CompletedBadge", "Muted"),
+            TaskState.Overdue => ("OverdueBadge", "Danger"),
+            _ => ("Selection", "Ink")
         };
-        StatusBackground = Brush(bg); StatusForeground = Brush(fg);
-    }
-
-    internal static SolidColorBrush Brush(string color)
-    {
-        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)); brush.Freeze(); return brush;
+        StatusBackground = Appearance.Brush(bg); StatusForeground = Appearance.Brush(fg);
     }
 }

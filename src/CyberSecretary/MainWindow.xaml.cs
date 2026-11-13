@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using CyberSecretary.Core;
@@ -12,6 +13,7 @@ public partial class MainWindow : Window
     private readonly TaskStore _store;
     private readonly List<TaskItem> _tasks;
     private readonly WorkCalendar _calendar;
+    private Skin _skin;
     private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(15) };
     private bool _ready;
     private DateTime _lastRefreshDate;
@@ -19,6 +21,8 @@ public partial class MainWindow : Window
     public MainWindow(TaskStore store, List<TaskItem> tasks)
     {
         _store = store; _tasks = tasks;
+        _skin = Appearance.Load(store.DirectoryPath);
+        Appearance.Apply(Application.Current.Resources, _skin);
         _calendar = WorkCalendar.LoadBuiltIn(Path.Combine(store.DirectoryPath, "calendars"));
         _calendar.RestDays = store.LoadRestDayRule();
         InitializeComponent();
@@ -83,13 +87,13 @@ public partial class MainWindow : Window
         {
             _store.Save(snapshot ?? _tasks);
             SaveLabel.Text = "所有更改已保存至本地";
-            SaveLabel.Foreground = TaskRow.Brush("#94A08F");
+            SaveLabel.SetResourceReference(ForegroundProperty, "Muted");
             return true;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             SaveLabel.Text = "保存失败，请重试";
-            SaveLabel.Foreground = TaskRow.Brush("#BC6854");
+            SaveLabel.SetResourceReference(ForegroundProperty, "Danger");
             MessageBox.Show(this, "无法保存任务，请检查数据目录是否可写。\n\n" + ex.Message, "保存失败", MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
@@ -127,7 +131,8 @@ public partial class MainWindow : Window
 
     public void ShowNotice(string message, bool warning = false)
     {
-        NoticeLabel.Text = message; NoticeLabel.Foreground = TaskRow.Brush(warning ? "#B08E42" : "#728E7A");
+        NoticeLabel.Text = message;
+        NoticeLabel.SetResourceReference(ForegroundProperty, warning ? "Warning" : "Muted");
     }
 
     private void NewTaskClick(object sender, RoutedEventArgs e) => NewTask();
@@ -180,6 +185,48 @@ public partial class MainWindow : Window
     private void CalendarClick(object sender, RoutedEventArgs e)
     {
         new CalendarDialog(_calendar, _store, Refresh) { Owner = this }.ShowDialog();
+        Refresh();
+    }
+
+    private void MinimizeClick(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+    private void MaximizeClick(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this);
+        else SystemCommands.MaximizeWindow(this);
+    }
+
+    private void CloseClick(object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
+
+    private void SkinClick(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu { PlacementTarget = SkinButton, Placement = PlacementMode.Top };
+        foreach (var group in Appearance.Skins.GroupBy(skin => skin.Dark))
+        {
+            if (group.Key) menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem { Header = group.Key ? "黑暗" : "明亮", IsEnabled = false });
+            foreach (var skin in group)
+            {
+                var item = new MenuItem { Header = skin.Name, IsCheckable = true, IsChecked = skin == _skin };
+                item.Click += (_, _) => ChangeSkin(skin);
+                menu.Items.Add(item);
+            }
+        }
+        SkinButton.ContextMenu = menu;
+        menu.IsOpen = true;
+    }
+
+    private void ChangeSkin(Skin skin)
+    {
+        if (skin == _skin) return;
+        try { Appearance.Save(_store.DirectoryPath, skin); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ShowNotice("皮肤设置保存失败，请检查数据目录是否可写。", warning: true);
+            return;
+        }
+        _skin = skin;
+        Appearance.Apply(Application.Current.Resources, skin);
         Refresh();
     }
 }

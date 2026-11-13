@@ -4,14 +4,14 @@
 
 Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 .NET。
 
-[下载 v0.3.1](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.3.1) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
+[下载 v0.5.0](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.5.0) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
 
 ![CyberSecretray::Working 界面，包含示例任务](docs/screenshot.png)
 
 ## 快速开始
 
-1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.3.1-win-x64.zip`。
-2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.3.1-win-x64.exe` 直接运行。
+1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.5.0-win-x64.zip`。
+2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.5.0-win-x64.exe` 直接运行。
 3. 点击表格右上角的「新建任务」，填写任务信息。
 
 支持 Windows 10 / Windows 11 x64。核心功能离线可用，不需要管理员权限。首次启动为空任务列表，截图中的任务仅用于演示。
@@ -49,6 +49,10 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 - 支持新建、标记完成、编辑、删除，以及按任务名或备注搜索。
 - 表格筛选不影响栅格，栅格始终显示完整任务范围。
 - `Ctrl+N` 新建任务，双击表格任务可编辑，编辑时 `Ctrl+Enter` 保存。
+
+## 皮肤与窗口
+
+点击左下角「工作日规则」右侧的「皮肤」，可切换 5 套明亮皮肤和 5 套黑暗皮肤。选择立即生效并保存在本机。主窗口的标题栏和外框也会随皮肤切换，可拖动标题栏、双击最大化或拖动边缘缩放。
 
 ## 工作日规则
 
@@ -104,10 +108,11 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 ├── tasks.json       # 当前任务
 ├── tasks.json.bak   # 上一次保存的任务备份
 ├── rest-day-rule.txt # 休息日设置
+├── skin.txt          # 皮肤设置
 └── calendars\       # 更新或导入的年度日历
 ```
 
-更换 EXE 不会删除任务。换电脑或手动备份时，先退出应用，再复制任务文件、`rest-day-rule.txt` 和 `calendars` 文件夹。
+更换 EXE 不会删除任务。换电脑或手动备份时，先退出应用，再复制任务文件、`rest-day-rule.txt`、`skin.txt` 和 `calendars` 文件夹。
 
 保存采用原子替换。主文件损坏且备份有效时，会保留损坏原文件并恢复备份；没有有效备份时提示错误，不会用空列表覆盖原文件。同一数据目录只允许一个实例运行。
 
