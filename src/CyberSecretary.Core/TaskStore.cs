@@ -13,9 +13,29 @@ public sealed class TaskStore
 
     public string DirectoryPath { get; }
     public string FilePath => Path.Combine(DirectoryPath, "tasks.json");
+    private string RestDayRulePath => Path.Combine(DirectoryPath, "rest-day-rule.txt");
     public bool RecoveredFromBackup { get; private set; }
 
     public TaskStore(string directoryPath) => DirectoryPath = directoryPath;
+
+    public RestDayRule LoadRestDayRule()
+    {
+        try
+        {
+            var value = File.ReadAllText(RestDayRulePath).Trim();
+            if (Enum.TryParse<RestDayRule>(value, out var rule) && Enum.IsDefined(rule)) return rule;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return RestDayRule.Huawei;
+    }
+
+    public void SaveRestDayRule(RestDayRule rule)
+    {
+        Directory.CreateDirectory(DirectoryPath);
+        string temporary = RestDayRulePath + ".tmp";
+        File.WriteAllText(temporary, rule.ToString());
+        File.Move(temporary, RestDayRulePath, overwrite: true);
+    }
 
     private sealed class TaskStateConverter : JsonConverter<TaskState>
     {

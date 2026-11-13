@@ -19,6 +19,20 @@ Check(calendar.IsWorkday(D("2026-02-21")) == false, "no replacement Saturday for
 Check(calendar.WorkdayPosition(D("2026-02-27"), D("2026-03-02")) == 3, "overlapping last Saturday counted once");
 Check(calendar.IsWorkday(D("2026-09-26")) == true, "extra last Saturday overrides holiday");
 Check(calendar.IsWorkday(D("2027-01-04")) == null, "unpublished calendar is unknown");
+calendar.RestDays = RestDayRule.TwoDayWeekend;
+Check(calendar.IsWorkday(D("2026-10-10")) == false && calendar.IsWorkday(D("2026-11-28")) == false &&
+      calendar.IsWorkday(D("2026-10-01")) == true && calendar.IsWorkday(D("2027-01-04")) == true,
+    "two-day weekend uses only weekdays, independent of holidays, makeup days and calendar coverage");
+Check(TaskRules.Urgency(Item("weekend", "2026-11-22", 1), D("2026-11-20"), calendar) == TaskUrgency.Critical,
+    "weekend days are excluded from reminder counts");
+calendar.RestDays = RestDayRule.OneDayWeekend;
+Check(calendar.IsWorkday(D("2026-11-21")) == true && calendar.Describe(D("2026-09-20")) == "休息日",
+    "one-day weekend treats Saturday as work and Sunday as rest even on a makeup Sunday");
+calendar.RestDays = RestDayRule.NoRestDays;
+Check(TaskRules.Urgency(Item("weekend", "2026-11-22", 1), D("2026-11-20"), calendar) == TaskUrgency.Soon,
+    "no-rest mode counts both weekend days toward reminders");
+calendar.RestDays = RestDayRule.Huawei;
+Check(calendar.IsWorkday(D("2026-10-01")) == false, "switching back restores holiday rules");
 Check(calendar.WorkdayPosition(D("2026-11-02"), D("2026-11-02")) == 1, "today is first workday");
 Check(calendar.WorkdayPosition(D("2026-11-02"), D("2026-11-03")) == 2, "tomorrow is second workday");
 Check(calendar.WorkdayPosition(D("2026-11-27"), D("2026-11-28")) == 2, "extra Saturday affects countdown");
@@ -72,6 +86,11 @@ try
 {
     var store = new TaskStore(folder);
     Check(store.Load().Count == 0, "first launch has no sample tasks");
+    Check(store.LoadRestDayRule() == RestDayRule.Huawei, "existing data defaults to Huawei workdays");
+    store.SaveRestDayRule(RestDayRule.OneDayWeekend);
+    store.SaveRestDayRule(RestDayRule.NoRestDays);
+    Check(new TaskStore(folder).LoadRestDayRule() == RestDayRule.NoRestDays && !File.Exists(store.FilePath),
+        "rest day preference persists separately from tasks");
     Directory.CreateDirectory(folder);
     File.WriteAllText(store.FilePath, """[{"Title":"legacy","Status":"NotStarted","Collaborators":null},{"Title":"legacy number","Status":0},{"Title":"legacy completed","Status":2}]""");
     Check(store.Load().Select(task => task.Status).SequenceEqual(new[] { TaskState.InProgress, TaskState.InProgress, TaskState.Completed }),

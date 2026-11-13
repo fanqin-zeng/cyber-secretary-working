@@ -103,6 +103,24 @@ internal static class Program
             window.Show(); window.UpdateLayout();
             var table = (DataGrid)window.FindName("TaskTable");
             Check(table.Items.Count == 1, "main table shows task");
+            window.Dispatcher.BeginInvoke(() =>
+            {
+                var rules = app.Windows.Cast<Window>().Single(open => open.Title == "工作日规则");
+                try
+                {
+                    var ruleInput = Descendants<ComboBox>(rules).Single(input => input.Name == "RestDayRuleInput");
+                    Check(ruleInput.Items.Count == 4 && Equals(ruleInput.SelectedValue, RestDayRule.Huawei),
+                        "workday dialog offers four rest day rules and defaults to Huawei");
+                    ruleInput.SelectedValue = RestDayRule.TwoDayWeekend;
+                    Check(store.LoadRestDayRule() == RestDayRule.TwoDayWeekend, "changing the rule saves it immediately");
+                    ruleInput.SelectedValue = RestDayRule.Huawei;
+                }
+                catch (Exception ex) { _failure = ex; }
+                finally { rules.Close(); }
+            }, DispatcherPriority.ContextIdle);
+            Descendants<Button>(window).Single(button => Equals(button.Content, "工作日规则"))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            if (_failure != null) throw _failure;
             var chart = (TaskChart)window.FindName("Chart");
             var calendar = WorkCalendar.LoadBuiltIn(calendars);
             var today = DateTime.Today;

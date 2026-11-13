@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     {
         _store = store; _tasks = tasks;
         _calendar = WorkCalendar.LoadBuiltIn(Path.Combine(store.DirectoryPath, "calendars"));
+        _calendar.RestDays = store.LoadRestDayRule();
         InitializeComponent();
         Height = Math.Min(Height, SystemParameters.WorkArea.Height - 34);
         Width = Math.Min(Width, SystemParameters.WorkArea.Width - 34);
@@ -178,7 +179,7 @@ public partial class MainWindow : Window
     }
     private void CalendarClick(object sender, RoutedEventArgs e)
     {
-        new CalendarDialog(_calendar, Path.Combine(_store.DirectoryPath, "calendars")) { Owner = this }.ShowDialog();
+        new CalendarDialog(_calendar, _store, Refresh) { Owner = this }.ShowDialog();
         Refresh();
     }
 }

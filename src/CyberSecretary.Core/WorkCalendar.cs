@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -19,11 +18,14 @@ public sealed class CalendarDay
     [JsonPropertyName("isOffDay")] public bool IsOffDay { get; set; }
 }
 
+public enum RestDayRule { Huawei, TwoDayWeekend, OneDayWeekend, NoRestDays }
+
 public sealed class WorkCalendar
 {
     private readonly SortedDictionary<int, CalendarDocument> _documents = [];
     private readonly Dictionary<DateTime, CalendarDay> _exceptions = [];
     public IReadOnlyCollection<int> CoveredYears => _documents.Keys.ToList();
+    public RestDayRule RestDays { get; set; }
 
     public static WorkCalendar LoadBuiltIn(string? userDirectory = null)
     {
@@ -72,6 +74,11 @@ public sealed class WorkCalendar
 
     public bool? IsWorkday(DateTime date)
     {
+        if (RestDays == RestDayRule.TwoDayWeekend)
+            return date.DayOfWeek is not DayOfWeek.Saturday and not DayOfWeek.Sunday;
+        if (RestDays == RestDayRule.OneDayWeekend) return date.DayOfWeek != DayOfWeek.Sunday;
+        if (RestDays == RestDayRule.NoRestDays) return true;
+
         date = date.Date;
         // The extra last Saturday is a union: an existing make-up workday
         // counts once, with no substitute Saturday elsewhere in the month.
@@ -83,6 +90,8 @@ public sealed class WorkCalendar
 
     public string Describe(DateTime date)
     {
+        if (RestDays != RestDayRule.Huawei) return IsWorkday(date) == true ? "工作日" : "休息日";
+
         bool last = IsLastSaturday(date);
         if (_exceptions.TryGetValue(date.Date, out var day))
         {

@@ -4,14 +4,14 @@
 
 Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 .NET。
 
-[下载 v0.3.0](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.3.0) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
+[下载 v0.3.1](https://github.com/fanqin-zeng/cyber-secretary-working/releases/tag/v0.3.1) · [使用说明](使用说明.txt) · [MIT 协议](LICENSE)
 
 ![CyberSecretray::Working 界面，包含示例任务](docs/screenshot.png)
 
 ## 快速开始
 
-1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.3.0-win-x64.zip`。
-2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.3.0-win-x64.exe` 直接运行。
+1. 在 [Releases](https://github.com/fanqin-zeng/cyber-secretary-working/releases) 下载 `CyberSecretray-Working-v0.3.1-win-x64.zip`。
+2. 解压后双击 `CyberSecretray-Working.exe`。也可下载单独的 `CyberSecretray-Working-v0.3.1-win-x64.exe` 直接运行。
 3. 点击表格右上角的「新建任务」，填写任务信息。
 
 支持 Windows 10 / Windows 11 x64。核心功能离线可用，不需要管理员权限。首次启动为空任务列表，截图中的任务仅用于演示。
@@ -50,9 +50,18 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 - 表格筛选不影响栅格，栅格始终显示完整任务范围。
 - `Ctrl+N` 新建任务，双击表格任务可编辑，编辑时 `Ctrl+Enter` 保存。
 
-## 工作日：采用「华为风格」
+## 工作日规则
 
-**本项目使用「华为风格」的自定义工作日计算。** 这里的名称指下面这组固定规则：
+在界面底部打开「工作日规则」即可切换。设置保存在本机，切换后栅格和截止提醒立即更新。
+
+| 休息日选项 | 规则 |
+| --- | --- |
+| 华为风格（默认） | 中国法定节假日和调休，加上月末周六工作日 |
+| 双休 | 每周六和周日休息 |
+| 单休 | 每周日休息 |
+| 无休 | 每天都是工作日 |
+
+法定节假日和调休仅用于华为风格。华为风格的具体规则如下。
 
 1. 以中国国务院公布的法定节假日和调休安排为基础。
 2. 每月最后一个周六额外算作工作日，即「月末周六」。
@@ -84,7 +93,7 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 
 已内置 2025、2026 年日历。点击底部「工作日规则」可查看规则、更新或导入年度 JSON 日历。
 
-尚未收录的年度会显示「法定日历待补全」，不猜测调休，不据此错误着色。空的未公布日历文件不会被视为完整日历。只有手动点击更新时才会联网获取日历，不上传个人任务。
+使用华为风格时，尚未收录的年度会显示「法定日历待补全」。空的未公布日历文件不会被视为完整日历。只有手动点击更新时才会联网获取日历，不上传个人任务。
 
 日历数据来自 [NateScarlet/holiday-cn](https://github.com/NateScarlet/holiday-cn)，依据国务院年度通知。2026 年安排见 [中国政府网](https://www.gov.cn/zhengce/content/202511/content_7047090.htm)。
 
@@ -94,10 +103,11 @@ Windows 桌面应用，下载 EXE 即可运行，免安装，无需另外安装 
 %LOCALAPPDATA%\CyberSecretary\
 ├── tasks.json       # 当前任务
 ├── tasks.json.bak   # 上一次保存的任务备份
+├── rest-day-rule.txt # 休息日设置
 └── calendars\       # 更新或导入的年度日历
 ```
 
-更换 EXE 不会删除任务。换电脑或手动备份时，先退出应用，再复制任务文件和 `calendars` 文件夹。
+更换 EXE 不会删除任务。换电脑或手动备份时，先退出应用，再复制任务文件、`rest-day-rule.txt` 和 `calendars` 文件夹。
 
 保存采用原子替换。主文件损坏且备份有效时，会保留损坏原文件并恢复备份；没有有效备份时提示错误，不会用空列表覆盖原文件。同一数据目录只允许一个实例运行。
 
