@@ -8,7 +8,7 @@ public sealed class TaskStore
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new TaskStateConverter(), new JsonStringEnumConverter() }
     };
 
     public string DirectoryPath { get; }
@@ -16,6 +16,27 @@ public sealed class TaskStore
     public bool RecoveredFromBackup { get; private set; }
 
     public TaskStore(string directoryPath) => DirectoryPath = directoryPath;
+
+    private sealed class TaskStateConverter : JsonConverter<TaskState>
+    {
+        private static readonly JsonConverter<TaskState> StringEnum = (JsonConverter<TaskState>)
+            new JsonStringEnumConverter<TaskState>().CreateConverter(typeof(TaskState), new JsonSerializerOptions());
+
+        public override TaskState Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            // v0.2.2 stored the retired NotStarted state as a name or the value zero.
+            if ((reader.TokenType == JsonTokenType.String &&
+                 string.Equals(reader.GetString()?.Trim(), "NotStarted", StringComparison.OrdinalIgnoreCase)) ||
+                (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int value) && value == 0))
+                return TaskState.InProgress;
+
+            var status = StringEnum.Read(ref reader, typeToConvert, options);
+            return status == 0 ? TaskState.InProgress : status;
+        }
+
+        public override void Write(Utf8JsonWriter writer, TaskState value, JsonSerializerOptions options) =>
+            StringEnum.Write(writer, value, options);
+    }
 
     public List<TaskItem> Load()
     {

@@ -11,7 +11,6 @@ public sealed class TaskRow
     public string ImportanceText => Item.Importance > 0 ? "+" + Item.Importance : Item.Importance.ToString();
     public string StatusText => TaskRules.StatusText(Item.Status);
     public bool CanComplete => Item.Status != TaskState.Completed;
-    public string CollaboratorText => string.IsNullOrWhiteSpace(Item.Collaborators) ? "—" : Item.Collaborators;
     public string NotesText => string.IsNullOrWhiteSpace(Item.Notes) ? "—" : Item.Notes.ReplaceLineEndings(" ");
     public string DeadlineHint { get; }
     public Brush RowBackground { get; }
@@ -45,10 +44,9 @@ public sealed class TaskRow
         };
         (string bg, string fg) = item.Status switch
         {
-            TaskState.InProgress => ("#E1EEE5", "#437964"),
             TaskState.Completed => ("#E5E8E9", "#7C8584"),
             TaskState.Overdue => ("#F8E1D9", "#B26C56"),
-            _ => ("#EBEEE7", "#7E8D78")
+            _ => ("#E1EEE5", "#437964")
         };
         StatusBackground = Brush(bg); StatusForeground = Brush(fg);
     }

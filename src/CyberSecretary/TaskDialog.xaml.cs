@@ -25,9 +25,20 @@ public partial class TaskDialog : Window
         StartTime.Text = _draft.StartAt.ToString("HH:mm"); EndTime.Text = _draft.EndAt.ToString("HH:mm");
         ImportanceInput.ItemsSource = Enumerable.Range(-5, 11).Reverse().Select(n => new { Text = n > 0 ? "+" + n : n.ToString(), Value = n });
         ImportanceInput.SelectedValue = _draft.Importance;
-        StatusInput.ItemsSource = Enum.GetValues<TaskState>().Select(s => new { Text = TaskRules.StatusText(s), Value = s });
-        StatusInput.SelectedValue = _draft.Status;
-        NotesInput.Text = _draft.Notes; CollaboratorInput.Text = _draft.Collaborators;
+        RecurrenceUnitInput.ItemsSource = new[]
+        {
+            new { Text = "分钟", Value = RecurrenceUnit.Minutes },
+            new { Text = "小时", Value = RecurrenceUnit.Hours },
+            new { Text = "天", Value = RecurrenceUnit.Days },
+            new { Text = "周", Value = RecurrenceUnit.Weeks },
+            new { Text = "月", Value = RecurrenceUnit.Months },
+            new { Text = "年", Value = RecurrenceUnit.Years }
+        };
+        RecurrenceEnabled.IsChecked = _draft.Recurrence != null;
+        RecurrenceEnabled.IsEnabled = _draft.Recurrence == null;
+        RecurrenceInterval.Text = (_draft.Recurrence?.Interval ?? 1).ToString(CultureInfo.InvariantCulture);
+        RecurrenceUnitInput.SelectedValue = _draft.Recurrence?.Unit ?? RecurrenceUnit.Days;
+        NotesInput.Text = _draft.Notes;
         StartDate.DateValidationError += DateInvalid; EndDate.DateValidationError += DateInvalid;
         Loaded += (_, _) => { TitleInput.Focus(); TitleInput.CaretIndex = TitleInput.Text.Length; };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control) { e.Handled = true; SaveClick(this, new RoutedEventArgs()); } };
@@ -44,11 +55,25 @@ public partial class TaskDialog : Window
         { ErrorLabel.Text = "开始时刻请使用 24 小时制，例如 09:00。"; StartTime.Focus(); return; }
         if (!TimeOnly.TryParseExact(EndTime.Text.Trim(), ["HH:mm", "H:mm"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var endTime))
         { ErrorLabel.Text = "结束时刻请使用 24 小时制，例如 18:00。"; EndTime.Focus(); return; }
-        if (ImportanceInput.SelectedValue is not int importance || StatusInput.SelectedValue is not TaskState status)
-        { ErrorLabel.Text = "请选择重要程度和任务状态。"; return; }
+        if (ImportanceInput.SelectedValue is not int importance)
+        { ErrorLabel.Text = "请选择重要程度。"; return; }
+        TaskRecurrence? recurrence = null;
+        if (RecurrenceEnabled.IsChecked == true)
+        {
+            if (!int.TryParse(RecurrenceInterval.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int interval) ||
+                interval <= 0 || RecurrenceUnitInput.SelectedValue is not RecurrenceUnit unit)
+            { ErrorLabel.Text = "周期须使用正整数和有效的单位。"; RecurrenceInterval.Focus(); return; }
+            recurrence = new TaskRecurrence(interval, unit);
+        }
         _draft.Title = TitleInput.Text.Trim(); _draft.StartAt = startDate.Date.Add(startTime.ToTimeSpan()); _draft.EndAt = endDate.Date.Add(endTime.ToTimeSpan());
-        _draft.Importance = importance; _draft.Status = status; _draft.Notes = NotesInput.Text.Trim(); _draft.Collaborators = CollaboratorInput.Text.Trim();
+        _draft.Importance = importance; _draft.Notes = NotesInput.Text.Trim(); _draft.Recurrence = recurrence;
         if (TaskRules.Validate(_draft) is { } error) { ErrorLabel.Text = error; if (_draft.Title.Length == 0) TitleInput.Focus(); return; }
+        if (recurrence != null)
+        {
+            try { recurrence.AdvanceWindow(_draft.StartAt, _draft.EndAt); }
+            catch (ArgumentOutOfRangeException)
+            { ErrorLabel.Text = "下一期超出日期范围，请缩短周期。"; RecurrenceInterval.Focus(); return; }
+        }
         _draft.Status = TaskRules.EffectiveStatus(_draft, DateTime.Now);
         Result = _draft; DialogResult = true;
     }

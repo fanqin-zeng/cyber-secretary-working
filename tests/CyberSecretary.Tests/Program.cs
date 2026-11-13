@@ -5,7 +5,7 @@ int assertions = 0;
 void Check(bool condition, string name) { assertions++; if (!condition) throw new Exception("FAILED: " + name); Console.WriteLine("PASS " + name); }
 var calendar = WorkCalendar.LoadBuiltIn();
 DateTime D(string text) => DateTime.ParseExact(text, "yyyy-MM-dd", null);
-TaskItem Item(string title, string due, int importance = 0, TaskState state = TaskState.NotStarted) => new()
+TaskItem Item(string title, string due, int importance = 0, TaskState state = TaskState.InProgress) => new()
 { Title = title, StartAt = D("2025-01-01"), EndAt = D(due).AddHours(18), Importance = importance, Status = state };
 
 Check(calendar.CoveredYears.SequenceEqual(new[] { 2025, 2026 }), "embedded calendars load");
@@ -47,6 +47,20 @@ Check(TaskRules.Sort(mixed, D("2026-11-05")).SequenceEqual(new[] { early, late, 
     "completed deadlines are reordered as the reference time advances");
 Check(TaskRules.EffectiveStatus(early, D("2026-11-04")) == TaskState.Overdue, "expired task becomes overdue");
 Check(TaskRules.EffectiveStatus(completed, D("2026-11-04")) == TaskState.Completed, "completion survives expiry");
+var rescheduled = Item("rescheduled", "2026-11-05", state: TaskState.Overdue);
+Check(TaskRules.EffectiveStatus(rescheduled, D("2026-11-04")) == TaskState.InProgress, "moving an overdue deadline into the future reopens it as in progress");
+var anchor = D("2024-01-31").AddHours(9);
+Check(new TaskRecurrence(3, RecurrenceUnit.Minutes).Advance(anchor) == anchor.AddMinutes(3) &&
+      new TaskRecurrence(2, RecurrenceUnit.Hours).Advance(anchor) == anchor.AddHours(2) &&
+      new TaskRecurrence(2, RecurrenceUnit.Days).Advance(anchor) == D("2024-02-02").AddHours(9) &&
+      new TaskRecurrence(2, RecurrenceUnit.Weeks).Advance(anchor) == D("2024-02-14").AddHours(9) &&
+      new TaskRecurrence(1, RecurrenceUnit.Months).Advance(anchor) == D("2024-02-29").AddHours(9) &&
+      new TaskRecurrence(1, RecurrenceUnit.Years).Advance(D("2024-02-29")) == D("2025-02-28"),
+    "all recurrence units advance calendar times, including short months and leap years");
+var shortMonth = new TaskRecurrence(1, RecurrenceUnit.Months)
+    .AdvanceWindow(D("2026-01-30").AddHours(22), D("2026-01-31").AddHours(9));
+Check(shortMonth == (D("2026-02-28").AddHours(22), D("2026-03-01").AddHours(9)),
+    "short month preserves duration if clamping would put the end before the start");
 Check(TaskRules.Validate(Item(" ", "2026-11-03")) != null, "blank title rejected");
 Check(TaskRules.Validate(Item("a", "2026-11-03", 6)) != null, "importance range enforced");
 var reverse = Item("a", "2026-11-03"); reverse.StartAt = D("2026-11-04");
@@ -58,10 +72,15 @@ try
 {
     var store = new TaskStore(folder);
     Check(store.Load().Count == 0, "first launch has no sample tasks");
-    early.Notes = "多行备注\n第二行"; early.Collaborators = "小林、小周";
+    Directory.CreateDirectory(folder);
+    File.WriteAllText(store.FilePath, """[{"Title":"legacy","Status":"NotStarted","Collaborators":null},{"Title":"legacy number","Status":0},{"Title":"legacy completed","Status":2}]""");
+    Check(store.Load().Select(task => task.Status).SequenceEqual(new[] { TaskState.InProgress, TaskState.InProgress, TaskState.Completed }),
+        "legacy names and numeric statuses load even when the removed collaborator field is present");
+    early.Notes = "多行备注\n第二行";
+    early.Recurrence = new TaskRecurrence(2, RecurrenceUnit.Weeks);
     store.Save([early]);
     var loaded = store.Load().Single();
-    Check(loaded.Id == early.Id && loaded.Notes == early.Notes && loaded.Collaborators == early.Collaborators && loaded.EndAt == early.EndAt, "full JSON roundtrip");
+    Check(loaded.Id == early.Id && loaded.Notes == early.Notes && loaded.Recurrence == early.Recurrence && loaded.EndAt == early.EndAt, "full JSON roundtrip");
     store.Save([early, late]);
     Check(File.Exists(store.FilePath + ".bak"), "atomic save retains backup");
     File.WriteAllText(store.FilePath, "invalid json");

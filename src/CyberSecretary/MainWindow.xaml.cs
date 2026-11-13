@@ -60,13 +60,13 @@ public partial class MainWindow : Window
         if (changed) Save();
         var query = SearchBox.Text.Trim();
         var visible = TaskRules.Sort(_tasks, now).Where(t => query.Length == 0 ||
-            t.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || t.Notes.Contains(query, StringComparison.OrdinalIgnoreCase) || t.Collaborators.Contains(query, StringComparison.OrdinalIgnoreCase))
+            t.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || t.Notes.Contains(query, StringComparison.OrdinalIgnoreCase))
             .Select(t => new TaskRow(t, _calendar, now)).ToList();
         TaskTable.ItemsSource = visible;
         if (selected.HasValue) TaskTable.SelectedItem = visible.FirstOrDefault(t => t.Item.Id == selected);
         EmptyState.Visibility = visible.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         EmptyTitle.Text = query.Length > 0 ? "没有找到相关任务" : "从一个小计划开始";
-        EmptyDescription.Text = query.Length > 0 ? "试试其他任务名、备注或协作人。" : "点击右上角「新建任务」，安排接下来重要的事。";
+        EmptyDescription.Text = query.Length > 0 ? "试试其他任务名或备注。" : "点击右上角「新建任务」，安排接下来重要的事。";
         TaskCount.Text = query.Length > 0 ? $"{visible.Count} / {_tasks.Count} 项" : $"{_tasks.Count} 项";
         int completed = _tasks.Count(t => t.Status == TaskState.Completed);
         int overdue = _tasks.Count(t => t.Status == TaskState.Overdue);
@@ -76,11 +76,11 @@ public partial class MainWindow : Window
         Chart.Update(chartItems, _calendar, now);
     }
 
-    private bool Save()
+    private bool Save(IEnumerable<TaskItem>? snapshot = null)
     {
         try
         {
-            _store.Save(_tasks);
+            _store.Save(snapshot ?? _tasks);
             SaveLabel.Text = "所有更改已保存至本地";
             SaveLabel.Foreground = TaskRow.Brush("#94A08F");
             return true;
@@ -134,10 +134,27 @@ public partial class MainWindow : Window
     private void CompleteTaskClick(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not TaskRow { CanComplete: true } row) return;
-        var previousStatus = row.Item.Status;
-        row.Item.Status = TaskState.Completed;
-        if (!Save()) row.Item.Status = previousStatus;
-        else ShowNotice("任务已结束");
+        int index = _tasks.IndexOf(row.Item);
+        if (index < 0) return;
+
+        TaskItem? next;
+        try { next = TaskRules.NextOccurrence(row.Item, DateTime.Now); }
+        catch (ArgumentOutOfRangeException)
+        {
+            ShowNotice("下一期超出日期范围，请先编辑任务周期。", warning: true);
+            return;
+        }
+
+        var completed = row.Item.Copy();
+        completed.Status = TaskState.Completed;
+        var snapshot = new List<TaskItem>(_tasks);
+        snapshot[index] = completed;
+        if (next != null) snapshot.Add(next);
+        if (!Save(snapshot)) return;
+
+        _tasks[index] = completed;
+        if (next != null) _tasks.Add(next);
+        ShowNotice(next == null ? "任务已结束" : "任务已结束，已创建下一期");
         Refresh();
     }
 

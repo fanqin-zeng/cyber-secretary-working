@@ -47,7 +47,7 @@ internal static class Program
                 papers = new[] { "test fixture, not an official calendar" },
                 days = new[] { new { date = DateTime.Today.ToString("yyyy-MM-dd"), name = "test", isOffDay = false } }
             }));
-            var dialog = new TaskDialog(null);
+            var dialog = new TaskDialog(new TaskItem { Status = TaskState.Overdue });
             dialog.Loaded += (_, _) => dialog.Dispatcher.BeginInvoke(() =>
             {
                 try
@@ -68,25 +68,37 @@ internal static class Program
                     ((TextBox)dialog.FindName("StartTime")).Text = "09:00";
                     ((TextBox)dialog.FindName("EndTime")).Text = "18:00";
                     ((ComboBox)dialog.FindName("ImportanceInput")).SelectedValue = 5;
-                    ((ComboBox)dialog.FindName("StatusInput")).SelectedValue = TaskState.Completed;
                     ((TextBox)dialog.FindName("NotesInput")).Text = "多行测试\n第二行";
-                    ((TextBox)dialog.FindName("CollaboratorInput")).Text = "协作人甲";
+                    ((DatePicker)dialog.FindName("EndDate")).SelectedDate = DateTime.Today.AddDays(1);
+                    Check(((FrameworkElement)dialog.FindName("RecurrenceFields")).Visibility == Visibility.Collapsed, "recurrence fields start hidden");
+                    ((CheckBox)dialog.FindName("RecurrenceEnabled")).IsChecked = true;
+                    var interval = (TextBox)dialog.FindName("RecurrenceInterval");
+                    interval.Text = "0";
+                    save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Check(dialog.IsVisible && error.Text.Contains("正整数"), "enabled recurrence rejects zero");
+                    interval.Text = "2";
+                    ((ComboBox)dialog.FindName("RecurrenceUnitInput")).SelectedValue = RecurrenceUnit.Weeks;
                     save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
                 catch (Exception ex) { _failure = ex; dialog.Close(); }
             }, DispatcherPriority.ContextIdle);
             Check(dialog.ShowDialog() == true, "valid form saves and closes");
             if (_failure != null) throw _failure;
-            Check(dialog.Result is { Importance: 5, Status: TaskState.Completed, Collaborators: "协作人甲" }, "enum importance and collaborator retained");
+            Check(dialog.Result is { Importance: 5, Status: TaskState.InProgress, Recurrence: { Interval: 2, Unit: RecurrenceUnit.Weeks } },
+                "saving a later deadline restores progress and saves recurrence");
             Check(dialog.Result!.Notes == "多行测试\n第二行", "multiline notes retained");
 
             var edit = new TaskDialog(dialog.Result);
             Check(((TextBox)edit.FindName("TitleInput")).Text == dialog.Result.Title, "edit prefills title");
-            Check((TaskState)((ComboBox)edit.FindName("StatusInput")).SelectedValue == TaskState.Completed, "edit prefills status");
+            Check(((CheckBox)edit.FindName("RecurrenceEnabled")).IsChecked == true &&
+                ((TextBox)edit.FindName("RecurrenceInterval")).Text == "2" &&
+                Equals(((ComboBox)edit.FindName("RecurrenceUnitInput")).SelectedValue, RecurrenceUnit.Weeks), "edit prefills recurrence");
             Check(((TextBox)edit.FindName("StartTime")).Text == "09:00", "edit prefills complete time");
             edit.Close();
 
             var store = new TaskStore(folder);
+            dialog.Result.Status = TaskState.Completed;
+            dialog.Result.EndAt = DateTime.Today.AddHours(18);
             var window = new MainWindow(store, [dialog.Result]);
             window.Show(); window.UpdateLayout();
             var table = (DataGrid)window.FindName("TaskTable");
@@ -139,7 +151,7 @@ internal static class Program
             var search = (TextBox)window.FindName("SearchBox");
             search.Text = "无匹配关键词";
             Check(table.Items.Count == 0 && ((FrameworkElement)window.FindName("EmptyState")).Visibility == Visibility.Visible, "search displays empty state");
-            search.Text = "协作人甲"; Check(table.Items.Count == 1, "search matches collaborator");
+            search.Text = "第二行"; Check(table.Items.Count == 1, "search matches notes");
             search.Clear();
             window.Dispatcher.BeginInvoke(() =>
             {
@@ -151,6 +163,8 @@ internal static class Program
                     ((DatePicker)newDialog.FindName("EndDate")).SelectedDate = DateTime.Today.AddDays(14);
                     ((TextBox)newDialog.FindName("StartTime")).Text = "09:00";
                     ((TextBox)newDialog.FindName("EndTime")).Text = "18:00";
+                    ((CheckBox)newDialog.FindName("RecurrenceEnabled")).IsChecked = true;
+                    ((ComboBox)newDialog.FindName("RecurrenceUnitInput")).SelectedValue = RecurrenceUnit.Weeks;
                     ((Button)newDialog.FindName("SaveButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
                 catch (Exception ex) { _failure = ex; foreach (var open in app.Windows.OfType<TaskDialog>().ToList()) open.Close(); }
@@ -183,6 +197,7 @@ internal static class Program
             var unfinishedTask = ((TaskRow)unfinishedGridRow.Item).Item.Copy();
             Check(completeButton.IsEnabled, "unfinished row offers the complete action");
             completeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            completeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             var updatedRow = table.Items.Cast<TaskRow>().Single(task => task.Item.Id == unfinishedTask.Id);
             Check(updatedRow.StatusText == "已结束" && ((SolidColorBrush)updatedRow.RowBackground).Color == completedColor,
                 "completing a task immediately updates its status and background");
@@ -192,7 +207,12 @@ internal static class Program
             Check(savedTask.Status == TaskState.Completed && savedTask.EndAt == unfinishedTask.EndAt,
                 "complete action persists the new status and retains the deadline");
             var reopened = new MainWindow(store, savedTasks); reopened.Show(); reopened.UpdateLayout();
-            Check(((DataGrid)reopened.FindName("TaskTable")).Items.Count == 2, "tasks reload in reopened window");
+            var nextTask = savedTasks.Single(task => task.Id != unfinishedTask.Id && task.Title == unfinishedTask.Title);
+            Check(nextTask.StartAt == unfinishedTask.StartAt.AddDays(7) && nextTask.EndAt == unfinishedTask.EndAt.AddDays(7) &&
+                nextTask.Status == TaskState.InProgress && nextTask.Recurrence == unfinishedTask.Recurrence &&
+                nextTask.Importance == unfinishedTask.Importance && nextTask.Notes == unfinishedTask.Notes,
+                "completing a recurring task persists exactly one next occurrence with shifted dates");
+            Check(((DataGrid)reopened.FindName("TaskTable")).Items.Count == 3, "completed history and next occurrence reload");
             reopened.Close();
             Console.WriteLine($"\n{_assertions} UI integration assertions passed.");
             return 0;

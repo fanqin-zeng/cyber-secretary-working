@@ -184,7 +184,7 @@ public sealed class TaskChart : FrameworkElement
             if (key.Day < FirstVisibleDay || key.Day > LastVisibleDay) continue;
             var item = items.FirstOrDefault(t => t.Status != TaskState.Completed) ?? items[0];
             var center = new Point(plot.X + (key.Day - FirstVisibleDay + .5) * cellW, plot.Y + (5 - key.Importance + .5) * cellH);
-            var color = TaskRow.Brush(item.Status switch { TaskState.InProgress => "#3E7D6E", TaskState.Completed => "#A1AEA5", TaskState.Overdue => "#CB6D59", _ => "#97A99F" });
+            var color = TaskRow.Brush(item.Status switch { TaskState.Completed => "#A1AEA5", TaskState.Overdue => "#CB6D59", _ => "#3E7D6E" });
             double radius = Math.Min(cellH * .4, items.Count > 1 ? 10.5 : 6.2);
             if (items.Count == 1 && item.Status == TaskState.Completed) dc.DrawEllipse(Brushes.White, new Pen(color, 1.8), center, radius, radius);
             else
@@ -241,7 +241,6 @@ public sealed class TaskChart : FrameworkElement
                 panel.Children.Add(new Border { Height = 1, Background = TaskRow.Brush("#E8ECE2"), Margin = new Thickness(0, 8, 0, 10) });
                 panel.Children.Add(new TextBlock { Text = item.Title, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
                 panel.Children.Add(new TextBlock { Text = TaskRules.StatusText(item.Status) + $"   ·   {item.StartAt:MM/dd HH:mm} — {item.EndAt:MM/dd HH:mm}", FontSize = 12, Foreground = TaskRow.Brush("#7F907A"), Margin = new Thickness(0, 6, 0, 0) });
-                if (item.Collaborators.Length > 0) panel.Children.Add(new TextBlock { Text = "协作人：" + item.Collaborators, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
                 if (item.Notes.Length > 0) panel.Children.Add(new TextBlock { Text = item.Notes, FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
             }
         }
